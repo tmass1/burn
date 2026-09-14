@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Burn — see how fast you're burning through your AI plans</title>
-<meta name="description" content="A menu-bar app for the Mac: every AI account — Claude, ChatGPT, Grok, Gemini, Cursor, Copilot — how much is left, how fast it's going, and when it runs out. Free and open source.">
+<meta name="description" content="A menu-bar app for the Mac: every AI account — Claude, ChatGPT, Grok, Gemini, Cursor, Copilot — how much is left, how fast it's going, when it runs out, and a word when it's unusually high for you. Free and open source.">
 <meta property="og:title" content="Burn — see how fast you're burning through your AI plans">
 <meta property="og:description" content="One menu-bar ring for every AI account. How much is left, how fast it's going, when it runs out.">
 <meta property="og:image" content="https://burn-1hx.pages.dev/assets/og.png">
@@ -139,6 +139,10 @@ h1 em{font-style:normal;background:linear-gradient(90deg,var(--ember2) 0%,var(--
 .reset .mi{font-size:12px;color:inherit}
 .reset.fast{color:#f1cc71}
 .foot{color:#a1a1a1;font-size:11.5px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:3px;flex:none;height:18px;padding:0 7px;border-radius:9px;background:rgba(241,204,113,.16);color:#f1cc71;font:700 10.5px -apple-system,"SF Pro Text",system-ui,sans-serif;white-space:nowrap;opacity:0;transform:scale(.85);transition:opacity .35s,transform .5s var(--spring)}
+.chip .mi{font-size:11px;color:#f1cc71}
+.chip.on{opacity:1;transform:none}
+.ver{color:var(--ink2);font-weight:600}
 
 /* ── sections ────────────────────────────────────────────── */
 .section{padding:72px 0;border-top:1px solid var(--line);scroll-margin-top:72px}
@@ -291,7 +295,7 @@ footer a:hover{color:var(--ink)}
         <a class="btn ghost" href="https://github.com/tmass1/burn"><span class="mi" aria-hidden="true">code</span>Source</a>
       </div>
       <div class="brew" data-reveal style="--i:6"><span class="dollar">$</span><span id="brew">brew install --cask tmass1/tap/burn</span><button type="button" data-copy="brew install --cask tmass1/tap/burn"><span class="mi" style="font-size:14px" aria-hidden="true">content_copy</span><span>Copy</span></button></div>
-      <p class="req" data-reveal style="--i:7"><b>macOS 14+</b> · Apple silicon and Intel · signed and notarized · <b>free</b>, MIT · no account, no telemetry</p>
+      <p class="req" data-reveal style="--i:7"><span id="ver"></span><b>macOS 14+</b> · Apple silicon and Intel · signed and notarized · <b>free</b>, MIT · no account, no telemetry</p>
     </div>
 
     <div class="shot" id="panel-shot" data-reveal style="--i:2">
@@ -316,6 +320,7 @@ footer a:hover{color:var(--ink)}
             <div class="ah">
               <span class="tile claude" style="--i:0"><svg viewBox="0 0 16 16"><path d="M8 2v12M2 8h12M3.8 3.8l8.4 8.4M12.2 3.8l-8.4 8.4"/></svg></span>
               <span class="nm">Personal</span><span class="pl">Max 5× · $100/mo</span>
+              <span class="chip" id="hero-chip" title="Session at 28 %/h; 6 %/h is typical for this account"><i class="mi" aria-hidden="true">local_fire_department</i>4.7× usual</span>
               <svg class="spark" viewBox="0 0 64 16" aria-hidden="true"><path d="M0 14 L10 2 L10 14 L22 2 L22 14 L36 2 L36 14 L50 2 L50 14 L64 3"/></svg>
               <span class="rowmenu" aria-hidden="true"><i class="mi">terminal</i><i class="mi">content_copy</i><i class="mi">visibility_off</i></span>
             </div>
@@ -388,6 +393,7 @@ footer a:hover{color:var(--ink)}
           <div class="ah">
             <span class="tile claude" style="transform:none;opacity:1"><svg viewBox="0 0 16 16"><path d="M8 2v12M2 8h12M3.8 3.8l8.4 8.4M12.2 3.8l-8.4 8.4"/></svg></span>
             <span class="nm">Personal</span><span class="pl">Max 5× · $100/mo</span>
+            <span class="chip" id="s-chip"><i class="mi" aria-hidden="true">local_fire_department</i>3× usual</span>
             <svg class="spark" viewBox="0 0 64 16" aria-hidden="true"><path d="M0 14 L10 2 L10 14 L22 2 L22 14 L36 2 L36 14 L50 2 L50 14 L64 3"/></svg>
           </div>
           <div class="line"><span class="lbl">Session</span><div class="meter"><i id="s-fill" style="width:12%"></i><span class="tk on" id="s-tick" style="left:12%"></span></div><span class="pct" id="s-pct">12%</span><span class="reset" id="s-reset"><i class="mi" aria-hidden="true">schedule</i><span>4h 24m</span></span></div>
@@ -402,7 +408,7 @@ footer a:hover{color:var(--ink)}
       </div>
       <div class="notes" data-reveal style="--i:4">
         <div class="note on"><span class="n">1</span><div><b>The pace tick</b><span>Where even use from start to reset would put you right now. On the tick, you're fine.</span></div></div>
-        <div class="note"><span class="n">2</span><div><b>Past the tick, going fast</b><span>Burn measures your real rate from its own history — no sign-in, no server. The bar tints as it pulls ahead.</span></div></div>
+        <div class="note"><span class="n">2</span><div><b>Past the tick, going fast</b><span>Burn measures your real rate from its own history — no sign-in, no server. The bar tints as it pulls ahead, and at 3× your typical busy hour the card says so.</span></div></div>
         <div class="note"><span class="n">3</span><div><b>A yellow reset</b><span>The window won't last. Hover for the sentence; a notification says so once the window is half used, then stays quiet.</span></div></div>
       </div>
     </div>
@@ -418,7 +424,7 @@ footer a:hover{color:var(--ink)}
       <div class="feat" data-reveal style="--i:2"><span class="mi" aria-hidden="true">terminal</span><h3>Launchers</h3><p>A command per Claude account — <code>claude-atlas</code>, <code>claude-studio</code> — that runs Claude Code signed in as that account. Hover a row for <em>Open Terminal with this account</em>.</p></div>
       <div class="feat" data-reveal style="--i:3"><span class="mi" aria-hidden="true">data_object</span><h3>A CLI and a status line</h3><p><code>burn</code> prints what the panel knows, <code>burn json</code> for scripts, and <code>burn statusline</code> drops the right account's numbers into Claude Code's status line.</p></div>
       <div class="feat" data-reveal style="--i:4"><span class="mi" aria-hidden="true">cloud_off</span><h3>Their outage, not your sign-in</h3><p>Anthropic, OpenAI, Cursor and GitHub status pages are checked every five minutes. An incident shows as a chip on the rows it affects instead of a mysterious error.</p></div>
-      <div class="feat" data-reveal style="--i:5"><span class="mi" aria-hidden="true">notifications_active</span><h3>Quiet until it matters</h3><p>A banner when a window passes your threshold, when a low one resets, and when one won't last at this pace. Quiet hours, one banner per window per period.</p></div>
+      <div class="feat" data-reveal style="--i:5"><span class="mi" aria-hidden="true">local_fire_department</span><h3>Unusual, for you</h3><p>A banner when a window burns at 3× your typical busy hour, or a model does 3× a typical day's work — measured against your own week, no numbers to set. Plus the basics: a banner at your threshold, and when a low window resets. Quiet hours, one banner per window per period.</p></div>
     </div>
   </section>
 
@@ -446,9 +452,9 @@ footer a:hover{color:var(--ink)}
     <div class="term" id="term" data-reveal style="--i:3" aria-label="Terminal session showing burn and burn statusline">
       <div class="bar3" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="tl"><span class="c">$ </span><span id="cmd1"></span><span class="cur on" id="cur1"></span></div>
-      <div class="tl out">Personal   session <span class="r">88%</span> · resets in 2h 9m · <span class="y">runs out in 25m</span>      weekly <span class="y">63%</span> · resets Sun 7:35 PM</div>
-      <div class="tl out">Studio     session <span class="g">31%</span> · resets in 2h 13m                       weekly <span class="g">44%</span> · resets Thu 2:47 AM</div>
-      <div class="tl out">ChatGPT    session <span class="g">53%</span> · resets in 4h 4m · <span class="y">runs out in 3h 10m</span>   weekly <span class="y">66%</span> · resets Thu 7:35 AM</div>
+      <div class="tl out">Personal   session <span class="r">88%</span> · resets in 2h 9m · <span class="y">runs out in 25m</span> · <span class="y">3× usual</span>  weekly <span class="y">63%</span> · resets Sun 7:35 PM</div>
+      <div class="tl out">Studio     session <span class="g">31%</span> · resets in 2h 13m                              weekly <span class="g">44%</span> · resets Thu 2:47 AM</div>
+      <div class="tl out">ChatGPT    session <span class="g">53%</span> · resets in 4h 4m · <span class="y">runs out in 3h 10m</span>          weekly <span class="y">66%</span> · resets Thu 7:35 AM</div>
       <div class="tl out">Grok       weekly <span class="g">7%</span> · resets Tue 5:11 PM</div>
       <div class="tl out">Cursor     monthly <span class="g">51%</span> · resets Sep 29</div>
       <div class="tl out">Copilot    premium <span class="g">22%</span> · resets Sep 29</div>
@@ -561,7 +567,7 @@ footer a:hover{color:var(--ink)}
     });
     if (reduce) {
       bars.forEach(b => { b.fill.style.width = b.to + '%'; b.pct.textContent = b.to + '%'; if (b.tk) b.tk.classList.add('on'); if (b.reset.hasAttribute('data-fast')) b.reset.classList.add('fast'); });
-      ring.style.strokeDashoffset = C * (1 - .88); return;
+      ring.style.strokeDashoffset = C * (1 - .88); $('#hero-chip').classList.add('on'); return;
     }
     const start = performance.now() + 150;
     const step = now => {
@@ -571,7 +577,11 @@ footer a:hover{color:var(--ink)}
         const p = clamp01((now - start - b.delay) / b.dur), e = ease.out(p);
         b.fill.style.width = (e * b.to) + '%'; b.pct.textContent = Math.round(e * b.to) + '%';
         if (b.primary) ring.style.strokeDashoffset = C * (1 - e * b.to / 100);
-        if (p >= 1) { b.done = true; if (b.tk) b.tk.classList.add('on'); if (b.reset.hasAttribute('data-fast')) setTimeout(() => b.reset.classList.add('fast'), 350); }
+        if (p >= 1) {
+          b.done = true; if (b.tk) b.tk.classList.add('on');
+          if (b.reset.hasAttribute('data-fast')) setTimeout(() => b.reset.classList.add('fast'), 350);
+          if (b.primary) setTimeout(() => $('#hero-chip').classList.add('on'), 700);
+        }
         else pending = true;
       });
       if (pending) requestAnimationFrame(step);
@@ -583,7 +593,7 @@ footer a:hover{color:var(--ink)}
   (() => {
     const st = $('#stage'); if (!st) return;
     const card = $('#st-card'), fill = $('#s-fill'), tk = $('#s-tick'), pct = $('#s-pct'), reset = $('#s-reset'), resetText = $('#s-reset span'),
-      tip = $('#s-tip'), notif = $('#s-notif'), notes = $$('#pace .note');
+      tip = $('#s-tip'), notif = $('#s-notif'), chip = $('#s-chip'), notes = $$('#pace .note');
     const T = 11;
     const fmt = mins => { const h = Math.floor(mins / 60), m = Math.round(mins % 60); return h ? `${h}h ${m}m` : `${m}m`; };
     const color = u => u >= 85 ? 'var(--red)' : u >= 60 ? 'var(--amber)' : 'var(--green)';
@@ -595,6 +605,7 @@ footer a:hover{color:var(--ink)}
       reset.classList.toggle('fast', s >= 6);
       card.classList.toggle('amber', used > tickAt + 6 && used < 85);
       card.classList.toggle('warn', used >= 85);
+      chip.classList.toggle('on', s >= 4.8 && s < 10.5);
       tip.classList.toggle('on', s >= 6.3 && s < 10.3);
       notif.classList.toggle('on', s >= 7.2 && s < 10.3);
       st.classList.toggle('fade', s >= 10.5);
@@ -659,6 +670,16 @@ footer a:hover{color:var(--ink)}
     const r = c.getBoundingClientRect();
     c.style.setProperty('--mx', (e.clientX - r.left) + 'px'); c.style.setProperty('--my', (e.clientY - r.top) + 'px');
   }));
+
+  // ── the current release, under the download button (quietly nothing until there is one)
+  fetch('https://api.github.com/repos/tmass1/burn/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(r => r.ok ? r.json() : null)
+    .then(rel => {
+      if (!rel || !rel.tag_name) return;
+      const dmg = (rel.assets || []).find(a => a.name === 'Burn.dmg');
+      const when = rel.published_at ? new Date(rel.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      $('#ver').innerHTML = `<span class="ver">Burn ${rel.tag_name.replace(/^v/, '')}</span>${dmg ? ' · ' + (dmg.size / 1048576).toFixed(1) + ' MB' : ''}${when ? ' · ' + when : ''} · `;
+    }).catch(() => {});
 
   // ── copy buttons
   $$('button[data-copy]').forEach(b => b.addEventListener('click', async () => {
