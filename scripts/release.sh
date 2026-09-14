@@ -31,6 +31,12 @@ echo "→ Burn $VERSION"
 if [[ $PUBLISH -eq 1 ]] && gh release view "$TAG" --repo "$RELEASE_REPO" >/dev/null 2>&1; then
   echo "release $TAG already exists — bump CFBundleShortVersionString first"; exit 1
 fi
+# Fail before the build if the notarization credential isn't there.
+if [[ $NOTARIZE -eq 1 ]] && ! xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
+  echo "no notarization credential '$NOTARY_PROFILE' — run:"
+  echo "  xcrun notarytool store-credentials $NOTARY_PROFILE --apple-id <apple id> --team-id Y5V8Y3BH9A"
+  exit 1
+fi
 
 # 1. Build both architectures and sign with the Developer ID certificate (hardened runtime, secure timestamp).
 BURN_SIGN_IDENTITY="$DEVELOPER_ID" scripts/bundle.sh --universal
@@ -71,10 +77,16 @@ echo "→ $DMG  $(du -h "$DMG" | cut -f1)"
 
 [[ $PUBLISH -eq 1 ]] || { echo "dry run — stopping before the GitHub release and the tap"; exit 0; }
 
-# 4. The GitHub release: the zip and the disk image, plus notes from the commits since the previous tag.
-PREV=$(git describe --tags --abbrev=0 2>/dev/null || true)
-NOTES=$(git log --pretty='- %s' ${PREV:+$PREV..}HEAD | grep -v "Co-Authored-By" | head -40)
-gh release create "$TAG" "$ZIP" "$DMG" --repo "$RELEASE_REPO" --title "Burn $VERSION" --notes "$NOTES"
+# 4. The GitHub release: the zip and the disk image, with docs/releases/<version>.md as the notes when there is one,
+# else the commit subjects since the previous tag.
+NOTES_FILE="docs/releases/$VERSION.md"
+if [[ -f "$NOTES_FILE" ]]; then
+  gh release create "$TAG" "$ZIP" "$DMG" --repo "$RELEASE_REPO" --title "Burn $VERSION" --notes-file "$NOTES_FILE"
+else
+  PREV=$(git describe --tags --abbrev=0 2>/dev/null || true)
+  NOTES=$(git log --pretty='- %s' ${PREV:+$PREV..}HEAD | grep -v "Co-Authored-By" | head -40)
+  gh release create "$TAG" "$ZIP" "$DMG" --repo "$RELEASE_REPO" --title "Burn $VERSION" --notes "$NOTES"
+fi
 
 # 5. The cask: version and checksum, in the tap (Homebrew takes the zip).
 TAP_DIR=$(mktemp -d)
