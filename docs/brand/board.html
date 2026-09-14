@@ -1,0 +1,791 @@
+<title>Headroom Brand Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono&family=IBM+Plex+Sans:wght@600&family=Nunito:wght@800&family=Outfit:wght@700&family=Fredoka:wght@600&family=Barlow+Semi+Condensed:wght@700&family=Plus+Jakarta+Sans:wght@800&display=swap">
+<style>
+:root{
+  --ground:#eef0f3;--surface:#ffffff;--ink:#1c1c1e;--muted:#6b6f76;--hair:rgba(0,0,0,.09);
+  --green:#2fa35c;--amber:#b8860b;--red:#d63a30;
+  --tint-g:rgba(47,163,92,.13);--tint-a:rgba(217,165,32,.16);--tint-r:rgba(222,47,38,.12);
+  --sel:rgba(47,163,92,.10);--field:#ffffff;--ember:#e2701f;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#1b212a;--surface:#222832;--ink:#f3f3f3;--muted:#a1a1a1;--hair:rgba(255,255,255,.09);
+    --green:#4ac778;--amber:#f1cc71;--red:#ffa49b;
+    --tint-g:rgba(74,199,120,.15);--tint-a:rgba(242,201,114,.15);--tint-r:rgba(221,47,40,.18);
+    --sel:rgba(74,199,120,.12);--field:#293039;--ember:#ff9a4d;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#1b212a;--surface:#222832;--ink:#f3f3f3;--muted:#a1a1a1;--hair:rgba(255,255,255,.09);
+  --green:#4ac778;--amber:#f1cc71;--red:#ffa49b;
+  --tint-g:rgba(74,199,120,.15);--tint-a:rgba(242,201,114,.15);--tint-r:rgba(221,47,40,.18);
+  --sel:rgba(74,199,120,.12);--field:#293039;--ember:#ff9a4d;
+}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 15px/1.55 "Geist",ui-sans-serif,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.mono{font-family:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+
+.masthead{padding:44px 0 30px;border-bottom:1px solid var(--hair)}
+.eyebrow{color:var(--muted);text-transform:uppercase;letter-spacing:.14em}
+h1{font:400 46px/1.05 "Instrument Serif",Georgia,serif;letter-spacing:-.01em;margin:10px 0 18px;text-wrap:balance}
+.thesis{max-width:64ch;font-size:16px;line-height:1.6;margin:0}
+.thesis+.thesis{margin-top:12px}
+.specimen{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:18px;margin:30px 0 6px}
+.specimen figure{margin:0;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.specimen figcaption{color:var(--muted)}
+.legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 28px;margin-top:26px;font-size:13px;color:var(--muted);line-height:1.45}
+.legend b{color:var(--ink);font-weight:500}
+
+.strip{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--ground) 86%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--hair)}
+.strip .wrap{display:flex;align-items:center;gap:6px;height:54px;overflow-x:auto}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:5px 10px 5px 6px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:500;border:1px solid transparent;white-space:nowrap}
+.chip.active{background:var(--surface);border-color:var(--hair)}
+.chip .cs{color:var(--amber);display:none}
+.chip.starred .cs{display:inline}
+.toggles{margin-left:auto;display:flex;gap:16px;font-size:13px;color:var(--muted);white-space:nowrap;padding-left:12px}
+.toggles label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+
+.sheet{display:grid;grid-template-columns:minmax(0,26fr) minmax(0,44fr) minmax(0,30fr);gap:36px;padding:40px 0;border-bottom:1px solid var(--hair)}
+.sheet.hidden{display:none}
+.sheet h2{margin:8px 0 0;font-weight:400;line-height:1}
+.kicker{color:var(--muted);text-transform:uppercase;letter-spacing:.14em}
+.tagline{font:italic 400 23px/1.3 "Instrument Serif",Georgia,serif;margin:16px 0 10px;text-wrap:balance}
+.idea{font-size:14.5px;line-height:1.6;margin:0;max-width:40ch}
+.states{display:flex;gap:6px;margin-top:16px;flex-wrap:wrap}
+.pill{font-size:12px;padding:3px 9px;border-radius:999px;font-weight:500;white-space:nowrap}
+.pill.g{background:var(--tint-g);color:var(--green)}
+.pill.a{background:var(--tint-a);color:var(--amber)}
+.pill.r{background:var(--tint-r);color:var(--red)}
+.typespec{margin-top:16px;color:var(--muted);line-height:1.5}
+.lbl{color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.12em}
+
+.insitu{display:grid;gap:22px;align-content:start}
+.icons{display:flex;align-items:flex-end;gap:22px}
+.icons figure{margin:0;display:flex;flex-direction:column;gap:7px;align-items:center}
+.icons figcaption{color:var(--muted)}
+.icons svg{display:block}
+.menubars{display:grid;gap:6px}
+.mb{height:24px;display:flex;align-items:center;justify-content:flex-end;gap:14px;padding:0 12px;border-radius:5px;font:500 13px/1 -apple-system,"SF Pro Text",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.mb .item{display:inline-flex;align-items:center;gap:6px}
+.mb svg{width:18px;height:18px;display:block}
+.mb-dark{background:#232327;color:#f2f2f2}
+.mb-light{background:#e7e7ea;color:#1c1c1e}
+.zoom2 .mb{height:48px;font-size:26px;padding:0 24px;gap:28px;border-radius:10px}
+.zoom2 .mb .item{gap:12px}
+.zoom2 .mb svg{width:36px;height:36px}
+.panel{background:#1b212a;border-radius:12px;max-width:420px;overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+.ph{display:flex;align-items:center;height:44px;padding:0 10px 0 16px;gap:10px}
+.ph .acts{margin-left:auto;display:flex;gap:4px}
+.ph .acts span{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;color:#a1a1a1;font-size:14px;border-radius:6px}
+.prow{margin:0 10px 10px;background:#222832;border-radius:8px;padding:8px 10px 9px;color:#f3f3f3;font:500 12px/1.3 -apple-system,"SF Pro Text",system-ui,sans-serif}
+.prow .sub{color:#a1a1a1;font-weight:400;margin-left:6px}
+.prow .bar{height:6px;background:rgba(0,0,0,.22);border-radius:3px;margin-top:7px;overflow:hidden}
+.prow .bar i{display:block;height:100%;width:35%;background:#4ac778;border-radius:3px}
+
+.judge{display:grid;gap:18px;align-content:start}
+.notif{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:10px 12px}
+.notif svg{flex:none}
+.n-app{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.n-title{font-size:13px;font-weight:500;margin-top:1px}
+.n-body{font-size:13px;color:var(--muted)}
+.n-time{margin-left:auto;font-size:11px;color:var(--muted);white-space:nowrap}
+.watch{margin:0;padding-left:16px;font-size:13px;color:var(--muted);line-height:1.45}
+.watch li{margin:3px 0}
+.watch .un{font-style:italic}
+.scores{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;font-size:13px;align-items:baseline}
+.dots{color:var(--green);letter-spacing:.1em;font-size:12px}
+.scores .total{border-top:1px solid var(--hair);padding-top:6px;margin-top:3px;font-weight:500}
+.scores .total+.dots{border-top:1px solid var(--hair);padding-top:6px;margin-top:3px;color:var(--ink)}
+.star{display:inline-flex;align-items:center;gap:7px;font:500 13px "Geist",ui-sans-serif,system-ui,sans-serif;color:var(--ink);background:var(--surface);border:1px solid var(--hair);border-radius:8px;padding:6px 10px;cursor:pointer}
+.star svg{width:14px;height:14px}
+.star path{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.star[aria-pressed="true"]{color:var(--amber);background:var(--sel);border-color:transparent}
+.star[aria-pressed="true"] path{fill:currentColor}
+.notes{width:100%;min-height:74px;resize:vertical;font:400 13px/1.5 "Geist",ui-sans-serif,system-ui,sans-serif;color:var(--ink);background:var(--field);border:1px solid var(--hair);border-radius:8px;padding:8px 10px}
+.notes::placeholder{color:var(--muted)}
+
+.wm{display:inline-block;line-height:1;white-space:nowrap}
+.wm svg{vertical-align:baseline}
+.wm .lk{vertical-align:-.12em;margin-right:.18em}
+.wm-headroom{font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;font-weight:600;letter-spacing:-.025em}
+.wm-headroom .o{margin:0 .015em}
+.wm-ample{font-family:"Nunito",ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:800;letter-spacing:-.01em}
+.wm-ample svg{margin:0 .035em}
+.wm-leeway{font-family:"Geist",ui-sans-serif,system-ui,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.18em}
+.wm-brim{font-family:"Outfit",ui-sans-serif,system-ui,sans-serif;font-weight:700;letter-spacing:-.02em}
+.wm-refill{font-family:"Fredoka",ui-rounded,system-ui,sans-serif;font-weight:600;letter-spacing:-.005em}
+.wm-halffull{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-.005em}
+.wm-juice{font-family:"Fredoka",ui-rounded,system-ui,sans-serif;font-weight:600;letter-spacing:-.005em}
+.wm-fizz{font-family:"Nunito",ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:800;letter-spacing:-.01em}
+.wm-wind{font-family:"Geist",ui-sans-serif,system-ui,sans-serif;font-weight:600;letter-spacing:-.025em}
+.wm-burn{font-family:"Plus Jakarta Sans",ui-rounded,system-ui,sans-serif;font-weight:800;letter-spacing:-.03em}
+.icons .var{color:var(--muted);margin:0 0 6px}
+.wm-halffull i{font-style:italic}
+
+.section{padding:40px 0;border-bottom:1px solid var(--hair)}
+.section h3{font:400 30px/1.1 "Instrument Serif",Georgia,serif;margin:0 0 6px}
+.section .lede{color:var(--muted);font-size:14px;margin:0 0 20px;max-width:64ch}
+.matrix{overflow-x:auto}
+.matrix table{border-collapse:collapse;width:100%;min-width:680px;font-size:13px}
+.matrix th,.matrix td{padding:9px 12px;border-bottom:1px solid var(--hair);text-align:left;vertical-align:middle}
+.matrix th{font-weight:500}
+.matrix thead th{padding-bottom:12px}
+.matrix thead .h{display:inline-flex;align-items:center;gap:8px}
+.matrix td.d{color:var(--green);letter-spacing:.1em;font-size:12px;font-variant-numeric:tabular-nums}
+.matrix tr.tot td{font-weight:500;color:var(--ink)}
+.matrix tr.tot td.d{color:var(--ink)}
+.namemap{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px 24px;margin:0 0 6px}
+.namemap ul{list-style:none;margin:0;padding:0;display:grid;gap:7px;align-content:start}
+.namemap li{font-size:15px;font-weight:500;letter-spacing:-.01em;line-height:1.3}
+.namemap li .suf{color:var(--muted);font-weight:400}
+.namemap li .by{display:block;color:var(--muted);font-size:12px;font-weight:400}
+.namemap li .pill{margin-left:6px;vertical-align:1px;font-size:11px;padding:2px 7px}
+.cands{display:flex;flex-wrap:wrap;align-items:baseline;gap:14px 26px;margin:22px 0 34px;padding-top:18px;border-top:1px solid var(--hair)}
+.cands .lbl{margin:0;align-self:center}
+.landscape table{min-width:920px}
+.landscape td{vertical-align:top;line-height:1.45}
+.landscape tr.grp td{padding-top:20px;padding-bottom:6px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em}
+.landscape .name{font-weight:500;white-space:nowrap}
+.landscape .name a{text-decoration:none}
+.landscape .name a:hover{text-decoration:underline}
+.landscape .maker{display:block;color:var(--muted);font-size:12px;font-weight:400;white-space:normal}
+.landscape .tag{font:italic 400 15px/1.3 "Instrument Serif",Georgia,serif}
+.landscape .tone{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.landscape .num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.landscape .sub{display:block;color:var(--muted);font-size:12px}
+.takeaways{display:grid;grid-template-columns:1fr 1fr;gap:16px 40px;margin-top:30px;font-size:14px;line-height:1.55}
+.takeaways p{margin:0}
+.takeaways b{display:block;font-weight:500;margin-bottom:2px}
+.bench dl{display:grid;grid-template-columns:auto 1fr;gap:7px 20px;font-size:14px;margin:0}
+.bench dt{font-weight:500}
+.bench dd{margin:0;color:var(--muted)}
+.foot{padding:30px 0 64px;color:var(--muted);font-size:13px;line-height:1.6}
+.foot p{margin:0 0 8px;max-width:78ch}
+.foot a{color:var(--muted)}
+
+@media (max-width:920px){
+  .sheet{grid-template-columns:1fr;gap:26px}
+  .specimen{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .legend{grid-template-columns:1fr 1fr}
+  h1{font-size:36px}
+  .toggles{margin-left:12px}
+  .namemap{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .takeaways{grid-template-columns:1fr}
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="tile-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#212630"/><stop offset="1" stop-color="#12151c"/></linearGradient>
+  <linearGradient id="burn-g" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#dc1c18"/><stop offset=".55" stop-color="#ff4a26"/><stop offset="1" stop-color="#ff8a3a"/></linearGradient>
+  <linearGradient id="tile-mid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b3341"/><stop offset="1" stop-color="#171c26"/></linearGradient>
+  <linearGradient id="tile-por" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdfdfe"/><stop offset="1" stop-color="#e9e9ee"/></linearGradient>
+</defs></svg>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow mono">Headroom · brand board · September 2026</div>
+    <h1>Which name, and which mark?</h1>
+    <p class="thesis">Headroom answers one question — which AI account still has room right now — in a category that names itself like spare parts: ClaudeBar, CodexBar, ClaudeMeter, TokenBar. The name is also taken three times over in this exact niche, including a paid menu-bar app aimed at the same people. Whatever it ends up called, the brand's job is reassurance: one calm ring, numbers first, green as the default mood.</p>
+    <p class="thesis">Ten concepts, each worked to the same depth so they can be compared honestly — the mark at icon and menu-bar size, the wordmark sitting in the panel header, and the voice in a notification. Star the ones worth another round; notes stay in this browser. The neighbourhood — fifteen trackers and tools, what they are called and what they cost — sits below the scorecard.</p>
+    <div class="specimen" id="specimen"></div>
+    <div class="legend">
+      <div><b>Says room</b> — does the name carry the idea of room left, unaided?</div>
+      <div><b>Short & spellable</b> — one or two syllables, no explaining the spelling.</div>
+      <div><b>Ownable here</b> — could this be the name people in this niche mean?</div>
+      <div><b>Mark writes itself</b> — the icon follows from the word, and holds at 16 px.</div>
+      <div><b>Warmth</b> — reassuring rather than clinical.</div>
+      <div><b>Clear of collisions</b> — what a search turns up; unsearched names are marked.</div>
+    </div>
+  </div>
+</header>
+
+<nav class="strip" aria-label="Concepts">
+  <div class="wrap">
+    <div id="chips" style="display:contents"></div>
+    <div class="toggles">
+      <label><input type="checkbox" id="only"> Shortlist only</label>
+      <label><input type="checkbox" id="zoom"> Menu bar at 2×</label>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div id="sheets"></div>
+
+  <section class="section">
+    <h3>Side by side</h3>
+    <p class="lede">A starting read, five dots best. The numbers live in the concept data at the top of the script, so they are easy to argue with.</p>
+    <div class="matrix" id="matrix"></div>
+  </section>
+
+  <section class="section landscape" id="neighbourhood">
+    <h3>The neighbourhood</h3>
+    <p class="lede">Every AI-usage tracker a search turns up, as of 11 September 2026, with what it is called, what it does and what it costs. Stars are GitHub’s that afternoon.</p>
+    <div class="lbl mono">How the category names itself</div>
+    <div class="namemap" id="namemap"></div>
+    <div class="cands"><span class="lbl mono">The candidates</span><span id="cands" style="display:contents"></span></div>
+    <div class="matrix" id="landscape"></div>
+    <div class="takeaways">
+      <p><b>Names</b>Almost everyone is Something-Bar, -Meter, -Tracker or -Usage — a category label, not a brand — and the real-word exceptions all took “Headroom”. A real word nobody else has is the open lane; it is also why Headroom no longer reads as ours.</p>
+      <p><b>Price</b>Free and MIT is the default, funded by sponsorship. The one paid tracker sells one-time licences at $7–59 and gates multi-account, history and widgets behind Pro. Subscriptions only appear where the tool saves money. If this ever charged, a one-time $9–15 is the norm; nobody pays monthly to look at a ring.</p>
+      <p><b>Table stakes</b>Session and weekly windows, a reset countdown, threshold notifications, a percentage in the menu bar, and “reads the sign-ins you already have”. Everyone has these.</p>
+      <p><b>Where others go further</b>Provider breadth (CodexBar’s 69), a CLI or local API for scripts (CodexBar, OpenUsage), the Claude Code statusline (Claude Tracker, ccusage), widgets and companions (CodexBar, SessionWatcher Pro, Zappa’s iPhone and Watch), cost and token analytics (TokenBar, ccusage, SessionWatcher), incident badges (CodexBar), a notch HUD (Claude Tracker).</p>
+      <p><b>Where Headroom is already ahead</b>Several accounts per provider with in-app sign-in and no cookie pasting — only SessionWatcher Pro and Claude Tracker do multi-account, and neither signs you in. Plan and monthly cost per account with a total; nobody else shows what the plans cost. Quiet hours and reset-after-low alerts. A designed interface, where the field is stock SwiftUI or Liquid Glass.</p>
+      <p><b>Gaps if it goes public</b>Six providers against nine or more, no statusline, no widgets, no CLI, no Windows.</p>
+    </div>
+  </section>
+
+  <section class="section bench">
+    <h3>Also on the bench</h3>
+    <p class="lede">Considered and set aside — kept here so they don't have to be rediscovered.</p>
+    <dl>
+      <dt>Jolt</dt><dd>The original programmer’s energy drink; a can with a bolt would be a fine icon, but Jolt Cola is a live trademark and the word says alert more than room.</dd>
+      <dt>Sip · Gulp · Buzz</dt><dd>Taken — Sip is the Mac colour picker, Gulp the build tool, Buzz is everyone’s.</dd>
+      <dt>Caffeine · Amphetamine · Lungo</dt><dd>The keep-awake apps already own the stimulant names — a reason for the drink family (it belongs on a Mac) and a reason to pick a word they haven’t.</dd>
+      <dt>Stint</dt><dd>A five-hour window is literally a racing stint; fun, but the metaphor needs explaining once.</dd>
+      <dt>Plimsoll</dt><dd>The ship's load line — freeboard is headroom. Wildly distinctive, obscure, and a sneaker in the UK.</dd>
+      <dt>Roomy</dt><dd>Clear and warm; a touch cute for a tool you keep for years.</dd>
+      <dt>Wiggle</dt><dd>Wiggle room. Playful and memorable, probably too silly next to Claude and Cursor.</dd>
+      <dt>Latitude</dt><dd>Elegant, three syllables, and Latitude already lives in AI (AI Dungeon's studio).</dd>
+      <dt>Margin · Reserve · Tank · Gauge · Meter</dt><dd>Accurate and generic — a category, not a name.</dd>
+      <dt>Runway · Slack · Tide · Headway · Cushion · Fathom</dt><dd>Taken. Runway is a product Headroom meters; Slack is the same idea and gone.</dd>
+    </dl>
+  </section>
+
+  <footer class="foot">
+    <p><b>To refine:</b> each concept is one object in <span class="mono">CONCEPTS</span> at the top of the script. Change the copy, a fill (the same number drives the icon, the menu-bar glyph and the wordmark) or a score, and the sheet, the strip and the table re-render. Stars and notes save in this browser only.</p>
+    <p><b>Collision sources:</b> <a href="https://github.com/allandecastro/headroom">allandecastro/headroom</a> · <a href="https://github.com/michellzappa/headroom">michellzappa/headroom</a> · <a href="https://extraheadroom.com/">extraheadroom.com</a> · <a href="https://www.producthunt.com/products/headroom">Headroom on Product Hunt</a> · <a href="https://apps.apple.com/us/app/leeway/id6758560495">Leeway on the App Store</a> · <a href="https://apps.apple.com/tn/developer/ample-software-llc/id921349096">Ample Software LLC</a> · <a href="https://pitchbook.com/profiles/company/489459-61">Ample (PitchBook)</a> · <a href="https://tddworks.github.io/ClaudeBar/">ClaudeBar</a> · <a href="https://codexbar.app/">CodexBar</a> · <a href="https://sessionwatcher.com/guides/best-ai-usage-trackers-mac">SessionWatcher’s tracker comparison</a> · <a href="https://sessionwatcher.com/">sessionwatcher.com</a> · <a href="https://github.com/steipete/CodexBar">steipete/CodexBar</a> · <a href="https://www.openusage.ai/">OpenUsage</a> · <a href="https://claudetracker.com/">claudetracker.com</a> · <a href="https://github.com/hamed-elfayome/Claude-Usage-Tracker">Claude Usage Tracker</a> · <a href="https://github.com/Nanako0129/TokenBar">TokenBar</a> · <a href="https://www.claudeusagebar.com/">ClaudeUsageBar</a> · <a href="https://github.com/thrr87/codex-limits">Codex Limits</a> · <a href="https://github.com/nanvon/cc-bar">cc-bar</a> · <a href="https://github.com/ryoppippi/ccusage">ccusage</a> · <a href="https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor">Claude Code Usage Monitor</a></p>
+  </footer>
+</main>
+
+<script>
+const CONCEPTS = [
+  {
+    id: 'headroom', name: 'Headroom', mark: 'headroom', word: 'headroom', fill: 0.75,
+    kicker: 'Keep the name · the audio engineer’s word',
+    tagline: 'Room to keep going.',
+    idea: 'Headroom is the decibels you have left before clipping. It is honest and instantly understood by anyone who has mixed audio or sized a server, and the ring is already a VU meter. What it lacks is ownership, so the mark has to carry the name: the double o becomes two meters, and one word shows what the app does.',
+    states: ['Fine', 'Tight', 'Out'],
+    voice: { title: 'Studio has headroom again', body: 'Session reset · 3 % used' },
+    type: 'IBM Plex Sans 600 · the two o’s are rings, 75 % and 40 % · icon: the current three-quarter ring',
+    watch: [
+      'extraheadroom.com sells a paid Headroom menu-bar app for Claude Code and ChatGPT token costs — same people, same menu bar',
+      'allandecastro/headroom and michellzappa/headroom on GitHub are menu-bar AI-quota trackers — the same product',
+      'Headroom, the 2020 AI video-meeting startup',
+    ],
+    searched: true,
+    scores: { room: 5, short: 3, ownable: 1, mark: 4, warmth: 3, clear: 1 },
+  },
+  {
+    id: 'ample', name: 'Ample', mark: 'ample', word: 'ample', fill: 0.84,
+    kicker: 'The promise, as an adjective',
+    tagline: 'Enough, and how much to spare.',
+    idea: 'Ample is what the app is for: enough, with some to spare. Five letters, nobody in this category would pick it, and it has an echo of amplitude for the audio crowd. The a and the p are built from a ring and a stem, so the wordmark carries the meters itself. Abstract on day one — the tagline does the explaining.',
+    states: ['Plenty', 'Tight', 'Out'],
+    voice: { title: 'Plenty of room on Claude Team', body: '84 % left · resets 6:10 PM' },
+    type: 'Nunito 800 · a and p are ring + stem, meters at 84 % and 72 % · icon: one thick ring, gap at twelve',
+    watch: [
+      'Ample, the EV battery-swapping company — well known in tech press',
+      'Ample Software LLC — small iOS utilities (HydrateMate, Count Me In)',
+      'Ample, a Nashville SaaS-integration platform (2020)',
+      'Nothing in the AI-tools space',
+    ],
+    searched: true,
+    scores: { room: 3, short: 5, ownable: 4, mark: 4, warmth: 5, clear: 4 },
+  },
+  {
+    id: 'leeway', name: 'Leeway', mark: 'leeway', word: 'leeway', fill: 0.62,
+    kicker: 'Nautical · room to drift',
+    tagline: 'How much leeway do you have?',
+    idea: 'Leeway is the sideways room a ship has before it is on the rocks; ashore it is simply how much slack you have got. It means exactly what Headroom means, warmer, in a sentence people actually say. Set in tracked capitals like a boat’s name; the ring opens to leeward and you are the dot in the middle.',
+    states: ['Leeway', 'Little', 'None'],
+    voice: { title: 'Leeway on Claude Team is down to 15 %', body: 'Resets 6:10 PM' },
+    type: 'Geist 600 · tracked capitals · icon: ring open to leeward with a centre dot',
+    watch: [
+      'Leeway, a text-first budgeting app that shows “what you have left today and this month” — the same idea, in money',
+      'Leeway CRM, Leeway contract management, Leeway travel-agency payments — crowded outside this niche',
+    ],
+    searched: true,
+    scores: { room: 5, short: 4, ownable: 3, mark: 3, warmth: 4, clear: 3 },
+  },
+  {
+    id: 'brim', name: 'Brim', mark: 'mug', word: 'brim', fill: 0.62,
+    kicker: 'The limit, made visible',
+    tagline: 'See it before it’s full.',
+    idea: 'Brim names the ceiling instead of the room, and the mark is a mug filling towards it — coffee being the other thing developers run on. The level takes the state colour: green while there is room, amber as it rises, red at the brim. Four letters, and it verbs. The trade is that it talks about fullness, so every line of copy is about what is used, not what is left.',
+    states: ['Low', 'Rising', 'At the brim'],
+    voice: { title: 'Claude Team is nearly at the brim', body: '92 % used · a fresh pot at 6:10 PM' },
+    type: 'Outfit 700 · lockup: mug + word · icon: a mug filling to its brim',
+    watch: [
+      'Brim Financial, a Canadian credit-card fintech, and assorted Brim apps',
+    ],
+    searched: false,
+    scores: { room: 2, short: 5, ownable: 3, mark: 5, warmth: 3, clear: 3 },
+  },
+  {
+    id: 'refill', name: 'Refill', mark: 'refill', word: 'refill', fill: 0.68,
+    kicker: 'Resets as free refills',
+    tagline: 'Every limit refills. Know when.',
+    idea: 'Every limit refills on a schedule; the only question is when. Refill makes the reset clock the hero and turns rate limits into coffee — friendly, universal, a little cheeky. The ring ends in an arrow because it comes back round. It says less about how much room there is right now, which is the app’s first question.',
+    states: ['Full', 'Low', 'Empty'],
+    voice: { title: 'Claude Team refills at 6:10 PM', body: '12 % left until then' },
+    type: 'Fredoka 600 · lockup: cycle ring + word · icon: the ring ends in an arrow',
+    watch: [
+      'Pharmacy and prescription “refill” apps everywhere',
+    ],
+    searched: false,
+    scores: { room: 2, short: 4, ownable: 3, mark: 4, warmth: 4, clear: 3 },
+  },
+  {
+    id: 'halffull', name: 'Half Full', mark: 'can', word: 'halffull', fill: 0.5,
+    kicker: 'The optimist’s meter · an energy drink, half full',
+    tagline: 'Still half full.',
+    idea: 'The glass became a slim energy can — which is what an AI plan is to a working day: fuel you buy by the month and drink by the five-hour window. Half full is the optimist’s reading of a quota and the friendliest there is, and it puts the app in the Mac tradition of naming tools after what keeps developers going (Caffeine, Amphetamine, Lungo). One care: a plain tall pill with a nub is the battery glyph, so the can keeps its shoulder and lid. The longest name here, which shows in the menu bar.',
+    states: ['Half full', 'Last sips', 'Empty'],
+    voice: { title: 'Claude Team is still half full', body: '52 % of the week left · a fresh can at 6:10 PM' },
+    type: 'Instrument Serif · Half upright, Full italic · icon: a slim can, half full (the glass is Fizz’s now)',
+    watch: [
+      'Expect a few Half Full apps and cafés; none likely in developer tools',
+    ],
+    searched: false,
+    scores: { room: 4, short: 2, ownable: 4, mark: 5, warmth: 5, clear: 4 },
+  },
+  {
+    id: 'juice', name: 'Juice', mark: 'bottle', word: 'juice', fill: 0.62,
+    kicker: 'Energy, colloquially',
+    tagline: 'How much juice do you have left?',
+    idea: 'Juice is what people already call it — battery, power, energy: “I’m out of juice.” One syllable, adjectives and verbs for free, and it never mentions quotas or tokens at all. A bottle for the mark, so it is not a second can and reads at sixteen pixels. Playful where the rest of the category is clinical.',
+    states: ['Juiced', 'Running low', 'Out of juice'],
+    voice: { title: 'Claude Team is running low on juice', body: '15 % left · refilled 6:10 PM' },
+    type: 'Fredoka 600 · lockup: bottle + word · icon: a small bottle with a cap',
+    watch: [
+      'Juice is a common app name — battery monitors, a fintech, a mobile ad network; nothing in developer tools',
+    ],
+    searched: false,
+    scores: { room: 3, short: 5, ownable: 3, mark: 4, warmth: 5, clear: 2 },
+  },
+  {
+    id: 'fizz', name: 'Fizz', mark: 'fizz', word: 'fizz', fill: 0.62,
+    kicker: 'Carbonation as energy',
+    tagline: 'Still fizzy?',
+    idea: 'A drink with fizz has energy left; a flat one is done. That hands the app a whole vocabulary nobody has to learn — fizzy, going flat, flat — and “Claude Team is going flat” is the best notification on this board. Four letters, fun to say. The bubbles are a detail the icon can afford at 48 px and drop at 16; the glass does the work.',
+    states: ['Fizzy', 'Going flat', 'Flat'],
+    voice: { title: 'Claude Team is going flat', body: '88 % used · fizz back at 6:10 PM' },
+    type: 'Nunito 800 · lockup: glass + word · icon: the glass, with bubbles',
+    watch: [
+      'Fizz, the college social app, and Fizz, a Québec mobile carrier — crowded outside developer tools',
+    ],
+    searched: false,
+    scores: { room: 3, short: 5, ownable: 3, mark: 4, warmth: 5, clear: 2 },
+  },
+  {
+    id: 'wind', name: 'Second Wind', mark: 'wind', word: 'wind', fill: 0.4,
+    kicker: 'The reset, as a feeling',
+    tagline: 'Your second wind comes at 6:10 PM.',
+    idea: 'Every limit resets; what that feels like is a second wind. The name makes the reset clock the hero and gives every notification a human line. Two words, and it talks about later rather than now — the app’s first question is still how much room there is at this moment. The mark is the can nearly spent, with the refill on its way.',
+    states: ['Fresh', 'Fading', 'Spent'],
+    voice: { title: 'Second wind for Claude Team at 6:10 PM', body: '12 % left until then' },
+    type: 'Geist 600 · two words, tight · icon: the can with a rising chevron',
+    watch: [
+      'Second Wind is a common name — breweries, a Marvel character, fitness apps; nothing in developer tools',
+    ],
+    searched: false,
+    scores: { room: 2, short: 2, ownable: 4, mark: 3, warmth: 5, clear: 3 },
+  },
+  {
+    id: 'burn', name: 'Burn', mark: 'flame', word: 'burn', fill: 0.76,
+    tiles: [{ name: 'Midnight', bg: 'url(#tile-mid)' }, { name: 'Porcelain', bg: 'url(#tile-por)', ink: '#1c1c1e', edge: 'rgba(0,0,0,.10)' }],
+    kicker: 'Energy drink · burning through tokens · revised',
+    tagline: 'Burn bright, not out.',
+    idea: 'Burn is the word on the can and the phrase everyone already uses — burning through tokens — and behind it sits the metric that actually matters: burn rate. It turns the app from a level into a pace: not just how much is left but how fast it is going and when it runs out at this rate. “2 % an hour, four hours left” is a line no tracker leads with, and the history samples already make it computable. The revised mark is a thick ring open at one o’clock whose end lifts off as a flame, in an ember gradient, on a Midnight or a Porcelain tile. Red is the app’s alarm colour, and with Burn that is the point: the mark is on fire, rows only catch fire when they are burning through, and the panel stays slate and green at rest. The risk is tone — burn is also burnout and burning money — so the voice stays about pace.',
+    states: ['Slow burn', 'Burning through', 'Burnt out'],
+    voice: { title: 'Claude Team is burning through the week', body: '2.6 %/h · out by 9:40 PM at this pace' },
+    type: 'Plus Jakarta Sans 800, lowercase · lockup: flame ring + word · icon: the ring with its end lifting off as a flame, ember gradient, Midnight and Porcelain tiles · the glossy version is a macOS 26 layered icon (tile, ring, flame)',
+    watch: [
+      'Burn, the energy drink (Coca-Cola’s, now Monster Beverage’s) — a live trademark in drinks, a different class',
+      'Burn, the free macOS disc-burning app — a Mac name for twenty years',
+      'Fitness and calorie apps called Burn; Burn Rate, the startup board game; token burns in crypto',
+      'Nothing in AI tools',
+    ],
+    searched: false,
+    scores: { room: 3, short: 5, ownable: 3, mark: 4, warmth: 3, clear: 2 },
+  },
+];
+
+const CRITERIA = [
+  ['room', 'Says room'], ['short', 'Short & spellable'], ['ownable', 'Ownable here'],
+  ['mark', 'Mark writes itself'], ['warmth', 'Warmth'], ['clear', 'Clear of collisions'],
+];
+
+const TAU = Math.PI * 2;
+let uidN = 0;
+const uid = () => 'clip' + (uidN++);
+
+function arcEl(cx, cy, r, w, frac, start, color, cap) {
+  const c = TAU * r;
+  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" style="stroke:${color}" stroke-width="${w}" stroke-linecap="${cap || 'round'}" stroke-dasharray="${(frac * c).toFixed(2)} ${c.toFixed(2)}" transform="rotate(${start} ${cx} ${cy})"/>`;
+}
+function trackEl(cx, cy, r, w, color, op) {
+  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" style="stroke:${color}" stroke-opacity="${op}" stroke-width="${w}"/>`;
+}
+
+// Every mark draws into an s×s box. ink = the neutral (white on tiles, currentColor as a menu-bar glyph),
+// green = the level colour, t = how visible the empty track is. fill is the concept's meter reading.
+const MARKS = {
+  headroom(s, ink, green, t, fill) {
+    return trackEl(s / 2, s / 2, .27 * s, .105 * s, ink, t) + arcEl(s / 2, s / 2, .27 * s, .105 * s, fill, -90, green);
+  },
+  ample(s, ink, green, t, fill) {
+    const start = -90 + (1 - fill) * 180;   // gap centred at twelve
+    return trackEl(s / 2, s / 2, .25 * s, .16 * s, ink, t) + arcEl(s / 2, s / 2, .25 * s, .16 * s, fill, start, green);
+  },
+  leeway(s, ink, green, t, fill) {
+    const start = -60 + (1 - fill) * 180;   // gap centred at one o'clock, to leeward
+    return trackEl(s / 2, s / 2, .27 * s, .09 * s, ink, t * .8) + arcEl(s / 2, s / 2, .27 * s, .09 * s, fill, start, green)
+      + `<circle cx="${s / 2}" cy="${s / 2}" r="${.055 * s}" style="fill:${ink}"/>`;
+  },
+  brim(s, ink, green, t, fill) {
+    const r = .28 * s, id = uid(), top = s / 2 + r - 2 * r * fill;
+    return `<clipPath id="${id}"><circle cx="${s / 2}" cy="${s / 2}" r="${r}"/></clipPath>`
+      + `<rect x="${s / 2 - r}" y="${top.toFixed(2)}" width="${2 * r}" height="${(s / 2 + r - top).toFixed(2)}" style="fill:${green}" clip-path="url(#${id})"/>`
+      + trackEl(s / 2, s / 2, r, .04 * s, ink, Math.min(1, t * 2));
+  },
+  refill(s, ink, green, t, fill) {
+    const r = .27 * s, w = .09 * s, end = -90 + fill * 360, rad = end * Math.PI / 180;
+    const x = s / 2 + r * Math.cos(rad), y = s / 2 + r * Math.sin(rad), L = .14 * s;
+    return trackEl(s / 2, s / 2, r, w, ink, t * .8) + arcEl(s / 2, s / 2, r, w, fill, -90, green, 'butt')
+      + `<g transform="translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${(end + 90).toFixed(1)})"><polygon points="${L},0 ${-.25 * L},${-.72 * L} ${-.25 * L},${.72 * L}" style="fill:${green}"/></g>`;
+  },
+  // Vessels: a body path filled to a level, in the same 100-unit box. Outline opacity comes from t like the glass.
+  vessel(body, level, top0, height, ink, green, t, extra) {
+    const id = uid(), o = Math.min(1, t * 2.5), top = top0 + height * (1 - level);
+    return `<clipPath id="${id}">${body}</clipPath>`
+      + `<rect x="20" y="${top.toFixed(2)}" width="60" height="${(top0 + height - top).toFixed(2)}" style="fill:${green}" clip-path="url(#${id})"/>`
+      + body.replace('<path ', `<path fill="none" style="stroke:${ink}" stroke-opacity="${o}" stroke-width="4" stroke-linejoin="round" `)
+      + (extra ? extra(top, o) : '');
+  },
+  can(s, ink, green, t, fill) {
+    // A slim energy can: the tapered shoulder and lid keep it from reading as the battery glyph in the menu bar.
+    return MARKS.vessel('<path d="M37 24 L41 16 H59 L63 24 V80 Q63 86 57 86 H43 Q37 86 37 80 Z"/>', fill, 16, 70, ink, green, t,
+      (top, o) => `<rect x="41" y="11" width="18" height="5" rx="2" style="fill:${ink}" fill-opacity="${o}"/>`);
+  },
+  bottle(s, ink, green, t, fill) {
+    return MARKS.vessel('<path d="M44 18 H56 V30 Q65 34 65 42 V80 Q65 88 59 88 H41 Q35 88 35 80 V42 Q35 34 44 30 Z"/>', fill, 18, 70, ink, green, t,
+      (top, o) => `<rect x="43" y="10" width="14" height="8" rx="2" style="fill:${ink}" fill-opacity="${o}"/>`);
+  },
+  mug(s, ink, green, t, fill) {
+    return MARKS.vessel('<path d="M30 30 H66 V78 Q66 84 60 84 H36 Q30 84 30 78 Z"/>', fill, 30, 54, ink, green, t,
+      (top, o) => `<path d="M66 44 Q82 44 82 56 Q82 68 66 68" fill="none" style="stroke:${ink}" stroke-opacity="${o}" stroke-width="5"/>`);
+  },
+  fizz(s, ink, green, t, fill) {
+    // The glass again, with bubbles wherever there is liquid — a detail for 48 px that vanishes at 16.
+    return MARKS.vessel('<path d="M30 22 H70 L66 73 Q65.6 78 60.4 78 H39.6 Q34.4 78 34 73 Z"/>', fill, 22, 56, ink, green, t,
+      (top, o) => [[44, 62, 2.6], [55, 55, 2.2], [49, 72, 1.8], [58, 68, 1.5], [46, 50, 1.4]]
+        .filter(b => b[1] > top + 3).map(b => `<circle cx="${b[0]}" cy="${b[1]}" r="${b[2]}" style="fill:${ink}" fill-opacity="0.55"/>`).join(''));
+  },
+  wind(s, ink, green, t, fill) {
+    // The can, nearly spent, with the refill on its way.
+    return MARKS.can(s, ink, green, t, fill) + `<path d="M45 32 L50 26 L55 32" fill="none" style="stroke:${green}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
+  },
+  fuse(s, ink, green, t, fill) {
+    // The ring as a coiled fuse: the arc is what is left to burn, the ember sits at the live end.
+    const r = .27 * s, w = .09 * s, end = -90 + fill * 360, rad = end * Math.PI / 180;
+    const x = s / 2 + r * Math.cos(rad), y = s / 2 + r * Math.sin(rad);
+    const ember = ink === 'currentColor' ? 'currentColor' : ink === '#ffffff' ? '#ff9a4d' : 'var(--ember)';
+    return trackEl(s / 2, s / 2, r, w, ink, t) + arcEl(s / 2, s / 2, r, w, fill, -90, green)
+      + `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${.10 * s}" style="fill:${ember}" fill-opacity="${ink === 'currentColor' ? .25 : .35}"/>`
+      + `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${.055 * s}" style="fill:${ember}"/>`;
+  },
+  flame(s, ink, green, t, fill) {
+    // The revised Burn mark, to the render's proportions: a chunky ring (stroke about a third of its outer
+    // diameter) open at one o'clock, and a flame licking up and to the right from its end. Ember gradient on tiles
+    // and in the lockup, solid currentColor as a menu-bar glyph. The arc starts under the flame and sweeps
+    // clockwise by the reading, so the flame and the gap always meet.
+    const cx = 46, cy = 57, r = 23, w = 18, mono = ink === 'currentColor';
+    const ember = mono ? 'currentColor' : 'url(#burn-g)';
+    const flame = 'M75 7 C68 16 60 25 63 35 C65 42 74 44 78 38 C82 32 79 26 77 21 C76 17 76 12 75 7 Z';
+    const gloss = mono ? '' : `<circle cx="${cx}" cy="${cy - 2.5}" r="${r}" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="${w * 0.3}" stroke-linecap="round" stroke-dasharray="${(fill * TAU * r).toFixed(2)} ${(TAU * r).toFixed(2)}" transform="rotate(-20 ${cx} ${cy - 2.5})"/>`;
+    return trackEl(cx, cy, r, w, ink, t * .5) + arcEl(cx, cy, r, w, fill, -20, ember) + gloss
+      + `<path d="${flame}" style="fill:${ember}"/>`;
+  },
+  halffull(s, ink, green, t, fill) {
+    const x0 = .30 * s, x1 = .70 * s, y0 = .22 * s, y1 = .78 * s, inset = .04 * s, id = uid();
+    const path = `M${x0} ${y0} H${x1} L${x1 - inset} ${y1 - .05 * s} Q${x1 - inset - .01 * s} ${y1} ${x1 - inset - .06 * s} ${y1} H${x0 + inset + .06 * s} Q${x0 + inset + .01 * s} ${y1} ${x0 + inset} ${y1 - .05 * s} Z`;
+    const top = y0 + (y1 - y0) * (1 - fill);
+    return `<clipPath id="${id}"><path d="${path}"/></clipPath>`
+      + `<rect x="${x0}" y="${top.toFixed(2)}" width="${x1 - x0}" height="${(y1 - top).toFixed(2)}" style="fill:${green}" clip-path="url(#${id})"/>`
+      + `<path d="${path}" fill="none" style="stroke:${ink}" stroke-opacity="${Math.min(1, t * 2.5)}" stroke-width="${.045 * s}" stroke-linejoin="round"/>`;
+  },
+};
+
+function tile(c, size, variant) {
+  const v = variant || (c.tiles ? c.tiles[0] : null);
+  const bg = v ? `<rect width="100" height="100" rx="22.5" fill="${v.bg}"/>${v.edge ? `<rect x="0.5" y="0.5" width="99" height="99" rx="22" fill="none" stroke="${v.edge}"/>` : ''}` : '<rect width="100" height="100" rx="22.5" fill="url(#tile-g)"/>';
+  const ink = v && v.ink ? v.ink : '#ffffff';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true">${bg}${MARKS[c.mark](100, ink, '#4ac778', .14, c.fill)}</svg>`;
+}
+function glyph(c, size) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true">${MARKS[c.mark](100, 'currentColor', 'currentColor', .28, c.fill)}</svg>`;
+}
+
+// Wordmarks take the x-height in px so the same function serves the sheet (36 px) and the panel header (8.5 px).
+function ringO(h, w, frac, color, ink) {
+  const r = (h - w) / 2;
+  return `<svg class="o" width="${h}" height="${h}" viewBox="0 0 ${h} ${h}" aria-hidden="true">${trackEl(h / 2, h / 2, r, w, ink, .2)}${arcEl(h / 2, h / 2, r, w, frac, -90, color)}</svg>`;
+}
+const WORDS = {
+  headroom(h, ink) {
+    const fs = h / 0.516, w = h * 0.17;
+    return `<span class="wm wm-headroom" style="font-size:${fs.toFixed(2)}px;color:${ink}">headr${ringO(h, w, .75, 'var(--green)', ink)}${ringO(h, w, .40, 'var(--amber)', ink)}m</span>`;
+  },
+  ample(h, ink) {
+    const fs = h / 0.5, w = h * 0.2, r = (h - w) / 2, cap = w / 2, H = 1.35 * h;
+    const a = `<svg width="${h}" height="${h}" viewBox="0 0 ${h} ${h}" aria-hidden="true">${arcEl(h / 2, h / 2, r, w, .84, 0, 'var(--green)')}<rect x="${h - w}" y="0" width="${w}" height="${h}" rx="${cap}" style="fill:${ink}"/></svg>`;
+    const p = `<svg width="${h}" height="${H}" viewBox="0 0 ${h} ${H}" style="vertical-align:${(-(H - h)).toFixed(2)}px" aria-hidden="true">${arcEl(h / 2, h / 2, r, w, .72, 180, 'var(--green)')}<rect x="0" y="0" width="${w}" height="${H}" rx="${cap}" style="fill:${ink}"/></svg>`;
+    return `<span class="wm wm-ample" style="font-size:${fs.toFixed(2)}px;color:${ink}">${a}m${p}le</span>`;
+  },
+  leeway(h, ink) {
+    return `<span class="wm wm-leeway" style="font-size:${(h * 1.42).toFixed(2)}px;color:${ink}">Leeway</span>`;
+  },
+  brim(h, ink) {
+    const m = h * 1.15;
+    return `<span class="wm wm-brim" style="font-size:${(h / 0.5).toFixed(2)}px;color:${ink}"><svg class="lk" width="${m}" height="${m}" viewBox="0 0 100 100" aria-hidden="true">${MARKS.mug(100, ink, 'var(--green)', .3, .62)}</svg>brim</span>`;
+  },
+  refill(h, ink) {
+    const m = h * 1.15;
+    return `<span class="wm wm-refill" style="font-size:${(h / 0.5).toFixed(2)}px;color:${ink}"><svg class="lk" width="${m}" height="${m}" viewBox="0 0 100 100" aria-hidden="true">${MARKS.refill(100, ink, 'var(--green)', .3, .68)}</svg>refill</span>`;
+  },
+  juice(h, ink) {
+    const m = h * 1.2;
+    return `<span class="wm wm-juice" style="font-size:${(h / 0.5).toFixed(2)}px;color:${ink}"><svg class="lk" width="${m}" height="${m}" viewBox="0 0 100 100" aria-hidden="true">${MARKS.bottle(100, ink, 'var(--green)', .3, .62)}</svg>juice</span>`;
+  },
+  fizz(h, ink) {
+    const m = h * 1.15;
+    return `<span class="wm wm-fizz" style="font-size:${(h / 0.5).toFixed(2)}px;color:${ink}"><svg class="lk" width="${m}" height="${m}" viewBox="0 0 100 100" aria-hidden="true">${MARKS.fizz(100, ink, 'var(--green)', .3, .62)}</svg>fizz</span>`;
+  },
+  wind(h, ink) {
+    return `<span class="wm wm-wind" style="font-size:${(h / 0.52).toFixed(2)}px;color:${ink}">Second Wind</span>`;
+  },
+  burn(h, ink) {
+    const m = h * 1.6;
+    return `<span class="wm wm-burn" style="font-size:${(h / 0.52).toFixed(2)}px;color:${ink}"><svg class="lk" width="${m}" height="${m}" viewBox="0 0 100 100" style="vertical-align:-.22em" aria-hidden="true">${MARKS.flame(100, ink, ink, .18, .76)}</svg>burn</span>`;
+  },
+  halffull(h, ink) {
+    return `<span class="wm wm-halffull" style="font-size:${(h / 0.45).toFixed(2)}px;color:${ink}">Half <i>Full</i></span>`;
+  },
+};
+
+const dots = n => '●'.repeat(n) + '○'.repeat(5 - n);
+const total = c => CRITERIA.reduce((sum, [k]) => sum + c.scores[k], 0);
+const starPath = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 6 6.5.8-4.8 4.5 1.3 6.5L12 17.5l-5.8 3.1 1.3-6.5L2.7 9.6l6.5-.8z"/></svg>';
+
+function sheet(c) {
+  const pct = Math.round(c.fill * 100) + ' %';
+  const mb = cls => `<div class="mb ${cls}"><span class="item">${glyph(c, 18)}<span>${pct}</span></span><span>Thu 4:20 PM</span></div>`;
+  return `<section class="sheet" id="c-${c.id}" data-id="${c.id}">
+    <div class="who">
+      <div class="kicker mono">${c.kicker}</div>
+      <h2>${WORDS[c.word](36, 'var(--ink)')}</h2>
+      <p class="tagline">${c.tagline}</p>
+      <p class="idea">${c.idea}</p>
+      <div class="states"><span class="pill g">${c.states[0]}</span><span class="pill a">${c.states[1]}</span><span class="pill r">${c.states[2]}</span></div>
+      <div class="typespec mono">${c.type}</div>
+    </div>
+    <div class="insitu">
+      <div>
+        <div class="lbl mono">Icon</div>
+        ${(c.tiles || [null]).map(v => `${v ? `<div class="var mono">${v.name}</div>` : ''}<div class="icons" style="margin-bottom:${c.tiles ? '12px' : '0'}">
+          <figure>${tile(c, 96, v)}<figcaption class="mono">96</figcaption></figure>
+          <figure>${tile(c, 48, v)}<figcaption class="mono">48</figcaption></figure>
+          <figure>${tile(c, 32, v)}<figcaption class="mono">32</figcaption></figure>
+          <figure>${tile(c, 16, v)}<figcaption class="mono">16</figcaption></figure>
+        </div>`).join('')}
+      </div>
+      <div>
+        <div class="lbl mono">Menu bar · real size</div>
+        <div class="menubars">${mb('mb-dark')}${mb('mb-light')}</div>
+      </div>
+      <div>
+        <div class="lbl mono">Panel header</div>
+        <div class="panel">
+          <div class="ph">${WORDS[c.word](8.5, '#f5f5f5')}<div class="acts"><span>↻</span><span>⚙</span></div></div>
+          <div class="prow">Studio<span class="sub">Team · Max 5× · $150/mo</span><div class="bar"><i></i></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="judge">
+      <div>
+        <div class="lbl mono">A notification</div>
+        <div class="notif">${tile(c, 30)}<div><div class="n-app">${c.name}</div><div class="n-title">${c.voice.title}</div><div class="n-body">${c.voice.body}</div></div><div class="n-time">now</div></div>
+      </div>
+      <div>
+        <div class="lbl mono">Watch out</div>
+        <ul class="watch">${c.watch.map(w => `<li>${w}</li>`).join('')}${c.searched ? '' : '<li class="un">Not searched yet</li>'}</ul>
+      </div>
+      <div>
+        <div class="lbl mono">Read</div>
+        <div class="scores">${CRITERIA.map(([k, label]) => `<span>${label}</span><span class="dots mono">${dots(c.scores[k])}</span>`).join('')}<span class="total">Total</span><span class="dots mono">${total(c)} / 30</span></div>
+      </div>
+      <div>
+        <button class="star" type="button" data-id="${c.id}" aria-pressed="false">${starPath}<span>Shortlist</span></button>
+      </div>
+      <textarea class="notes" data-id="${c.id}" placeholder="Notes — saved in this browser" aria-label="Notes on ${c.name}"></textarea>
+    </div>
+  </section>`;
+}
+
+document.getElementById('sheets').innerHTML = CONCEPTS.map(sheet).join('');
+document.getElementById('specimen').innerHTML = CONCEPTS.map(c => `<figure><a href="#c-${c.id}" aria-label="${c.name}">${tile(c, 64)}</a><figcaption class="mono">${c.name}</figcaption></figure>`).join('');
+document.getElementById('chips').innerHTML = CONCEPTS.map(c => `<a class="chip" href="#c-${c.id}" data-id="${c.id}">${tile(c, 22)}<span>${c.name}</span><span class="cs" aria-label="shortlisted">★</span></a>`).join('');
+document.getElementById('matrix').innerHTML = `<table>
+  <thead><tr><th></th>${CONCEPTS.map(c => `<th><span class="h">${tile(c, 20)}${c.name}</span></th>`).join('')}</tr></thead>
+  <tbody>${CRITERIA.map(([k, label]) => `<tr><td>${label}</td>${CONCEPTS.map(c => `<td class="d mono">${dots(c.scores[k])}</td>`).join('')}</tr>`).join('')}
+  <tr class="tot"><td>Total</td>${CONCEPTS.map(c => `<td class="d mono">${total(c)}</td>`).join('')}</tr></tbody>
+</table>`;
+
+// The neighbourhood: every tracker a search turned up on 11 Sep 2026. kind: direct (menu-bar tracker), adjacent
+// (terminal tools and the optimiser), native (the vendors' own surfaces). pattern/suffix drive the naming map.
+const COMPETITORS = [
+  { kind: 'direct', name: 'CodexBar', suffix: 'Bar', pattern: 'bar', maker: 'Peter Steinberger', stars: 21262, url: 'https://github.com/steipete/CodexBar',
+    tagline: 'Every AI coding limit, in your menu bar.', tone: 'Terse, engineer to engineer; a fader-knob emoji for a mark; “May your tokens never run out.”',
+    platform: 'macOS 14+; CLI on macOS and Linux', providers: '69 — Codex, Claude, Cursor, Gemini, Copilot, Grok, Bedrock, ElevenLabs…',
+    standout: 'Incident badges on the icon, Merge Icons mode, a bundled CLI, WidgetKit widgets, credits and Admin-API spend views, Homebrew cask', price: 'Free', licence: 'MIT' },
+  { kind: 'direct', name: 'OpenUsage', suffix: 'Usage', pattern: 'usage', maker: 'Robin Ebers + 54 contributors', stars: 4117, url: 'https://www.openusage.ai/',
+    tagline: 'The only AI usage tracker that’s truly yours.', tone: 'Practical, plugin-minded, “built with AI”',
+    platform: 'macOS 15+', providers: '9 — Claude, Codex, Cursor, Copilot, Devin, Grok, Antigravity, OpenRouter, Z.ai',
+    standout: 'Pin two metrics per provider into the bar as text or mini bars; local HTTP API on :6736 for other tools', price: 'Free', licence: 'MIT' },
+  { kind: 'direct', name: 'Claude Usage Tracker', suffix: 'Tracker', pattern: 'tracker', maker: 'Hamed Elfayome · claudetracker.com', stars: 3470, url: 'https://claudetracker.com/',
+    tagline: 'Know your limits. Never hit them.', tone: '“Private by design”; 14 languages; a sponsor slot in the README',
+    platform: 'macOS 14+', providers: 'Claude; Codex since v3.3',
+    standout: 'Unlimited profiles with auto-switch and per-profile launchers, Claude Code statusline with pace markers, API cost charts, a Dynamic Island HUD', price: 'Free (sponsorship)', licence: 'MIT' },
+  { kind: 'direct', name: 'ClaudeBar', suffix: 'Bar', pattern: 'bar', maker: 'tddworks', stars: 1480, url: 'https://tddworks.github.io/ClaudeBar/',
+    tagline: 'Every AI quota, one macOS menu bar.', tone: 'Utility; five themes including a CLI look',
+    platform: 'macOS 15+', providers: '19 — Claude, Copilot, Gemini, Codex, Bedrock, Cursor, DeepSeek, Grok, Kimi…',
+    standout: 'Reset countdowns to the second, warning/critical/reset notifications, .itermcolors theme import, Sparkle updates', price: 'Free', licence: 'MIT' },
+  { kind: 'direct', name: 'TokenBar', suffix: 'Bar', pattern: 'bar', maker: 'Nanako0129', stars: 345, url: 'https://github.com/Nanako0129/TokenBar',
+    tagline: 'Native Swift, Liquid Glass, 3D contribution graph.', tone: 'Local-only; spectacle',
+    platform: 'macOS 14+, Apple Silicon only; a Windows sibling', providers: 'Claude Code, Codex, Cursor, OpenCode, Gemini CLI, “25+ agents”',
+    standout: 'Spend and tokens/min in the bar title, seven cost lenses (models, sub-agents), a year of usage as an orbitable 3D graph', price: 'Free (sponsorship)', licence: 'MIT' },
+  { kind: 'direct', name: 'SessionWatcher', suffix: 'Watcher', pattern: 'tracker', maker: 'Commercial', stars: null, url: 'https://sessionwatcher.com/',
+    tagline: 'Never lose a coding session to rate limits.', tone: 'Direct; sells peace of mind',
+    platform: 'macOS 14+, Intel and Apple Silicon, notarized', providers: '17 — Claude, Codex, Cursor, Copilot, Gemini CLI, Antigravity, Kimi, DeepSeek, Grok, Qwen, Z.ai…',
+    standout: 'Alerts at 70/90 %, 7-day history (90 with Pro), USD cost, multi-account for Claude and Codex (Pro), widgets, sync across 5 Macs', price: 'Solo $6.99 · Bundle $14.99 · Pro $59 once or $24/yr', licence: 'Proprietary' },
+  { kind: 'direct', name: 'ClaudeMeter', suffix: 'Meter', pattern: 'meter', maker: 'Edd Mann', stars: 169, url: 'https://eddmann.com/ClaudeMeter/',
+    tagline: 'Track your Claude.ai usage.', tone: 'Plain, single-purpose',
+    platform: 'macOS 14+', providers: 'claude.ai plan limits',
+    standout: 'Threshold alerts; notes that its browser-cookie auth “may violate Anthropic’s Terms of Service”', price: 'Free', licence: 'MIT' },
+  { kind: 'direct', name: 'ClaudeUsageBar', suffix: 'Bar', pattern: 'bar', maker: 'claudeusagebar.com', stars: null, url: 'https://www.claudeusagebar.com/',
+    tagline: 'Tracks your Claude and Claude Code usage limits at a glance.', tone: 'Minimal; “free forever”',
+    platform: 'macOS 12+', providers: 'Claude, Claude Code',
+    standout: '⌘U, alerts at 25/50/75/90 %, a Claude status monitor, under 5 MB — you paste a claude.ai cookie by hand', price: 'Free (donations)', licence: 'Open source' },
+  { kind: 'direct', name: 'Codex Limits', suffix: 'Limits', pattern: 'tracker', maker: 'thrr87', stars: 49, url: 'https://github.com/thrr87/codex-limits',
+    tagline: 'Tracking and pacing Codex usage.', tone: 'Careful — facts, local facts and estimates each labelled with confidence',
+    platform: 'macOS 14+, universal', providers: 'Codex',
+    standout: 'Pacing rather than just reading; needs the Homebrew Codex CLI', price: 'Free', licence: 'MIT' },
+  { kind: 'direct', name: 'cc-bar', suffix: 'bar', pattern: 'bar', maker: 'nanvon', stars: 123, url: 'https://github.com/nanvon/cc-bar',
+    tagline: 'Menu-bar quota monitor and local usage dashboard.', tone: 'Chinese-language README',
+    platform: 'macOS 14+', providers: 'Codex, Claude Code, Antigravity, Cursor, Command Code',
+    standout: 'Floating HUD, quota timelines, local token and cost analysis', price: 'Free', licence: 'MIT' },
+  { kind: 'direct', name: 'headroom', suffix: '', pattern: 'word', maker: 'Michell Zappa', stars: 262, url: 'https://github.com/michellzappa/headroom',
+    tagline: 'Local-first AI coding quotas and ship status.', tone: 'Our name; a whole ecosystem around a Python host',
+    platform: 'macOS + iPhone/iPad + Apple Watch + an ESP32 desk display', providers: 'Claude, Codex, Cursor…',
+    standout: 'Rings, daily burn and spend; an iPhone app, Watch complications, Notification Center widgets, a desk display; JSON feed', price: 'Free', licence: 'MIT' },
+  { kind: 'direct', name: 'headroom', suffix: '', pattern: 'word', maker: 'Allan de Castro', stars: 10, url: 'https://github.com/allandecastro/headroom',
+    tagline: 'Know when to switch from Opus to Sonnet before hitting the wall.', tone: 'Our name again; Tauri 2 + React',
+    platform: 'macOS', providers: 'Claude Code, Copilot',
+    standout: '5-hour windows, weekly caps, monthly allowances', price: 'Free', licence: 'MIT' },
+  { kind: 'adjacent', name: 'ccusage', suffix: 'usage', pattern: 'usage', maker: 'ryoppippi', stars: 18497, url: 'https://github.com/ryoppippi/ccusage',
+    tagline: 'npx ccusage', tone: 'The de-facto cost CLI',
+    platform: 'Terminal (npm)', providers: 'Claude Code',
+    standout: 'Daily, monthly, per-session and 5-hour-block cost from the local logs, per-model and cache breakdowns, a statusline mode', price: 'Free', licence: 'Open source' },
+  { kind: 'adjacent', name: 'Claude Code Usage Monitor', suffix: 'Monitor', pattern: 'meter', maker: 'Maciek-roboblog', stars: 8699, url: 'https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor',
+    tagline: 'Real-time Claude Code usage monitor with predictions and warnings.', tone: 'A Rich terminal dashboard',
+    platform: 'Terminal (Python)', providers: 'Claude Code',
+    standout: 'Burn rate, depletion predictions, plan auto-detection, daily and monthly views', price: 'Free', licence: 'MIT' },
+  { kind: 'adjacent', name: 'Headroom', suffix: '', pattern: 'word', maker: 'extraheadroom.com', stars: 547, url: 'https://extraheadroom.com/',
+    tagline: 'Same AI plan. Twice the code.', tone: 'ROI-led and technical; our name, sold as a subscription',
+    platform: 'macOS, Windows, Linux', providers: 'Claude Code, ChatGPT/Codex',
+    standout: 'Not a tracker: compresses tool output in flight for ~50 % fewer tokens, with savings analytics and add-ons', price: '$3 · $15 · $30 a month by plan size; 7-day trial', licence: 'Proprietary (CLI open source)' },
+  { kind: 'native', name: 'The vendors’ own surfaces', suffix: '', pattern: null, maker: 'Anthropic, OpenAI, Cursor', stars: null, url: null,
+    tagline: 'Claude Code /usage, the claude.ai usage page, Cursor’s dashboard, Codex inside the ChatGPT app.', tone: 'What everyone starts with',
+    platform: 'In each product', providers: 'One each',
+    standout: 'No menu bar and no cross-account view; /usage is approximate and local-only', price: 'Included', licence: '—' },
+];
+
+const PATTERNS = [
+  ['bar', '–Bar'], ['meter', '–Meter · –Monitor'], ['tracker', '–Tracker · –Limits · –Watcher'], ['usage', 'Usage'], ['word', 'Real words'],
+];
+function nameCell(c) {
+  if (!c.suffix) return c.name;
+  const i = c.name.lastIndexOf(c.suffix);
+  return c.name.slice(0, i) + `<span class="suf">${c.suffix}</span>` + c.name.slice(i + c.suffix.length);
+}
+document.getElementById('namemap').innerHTML = PATTERNS.map(([key, label]) => {
+  let items = COMPETITORS.filter(c => c.pattern === key);
+  if (key === 'word') {
+    const n = items.filter(c => c.name.toLowerCase() === 'headroom').length;
+    items = [{ name: 'Headroom', suffix: '', takenBy: n }].concat(items.filter(c => c.name.toLowerCase() !== 'headroom'));
+  }
+  return `<div><div class="lbl mono">${label}</div><ul>${items.map(c => `<li>${nameCell(c)}${c.takenBy ? `<span class="pill r">taken ×${c.takenBy}</span>` : ''}${c.maker && !c.takenBy && key === 'word' ? `<span class="by">${c.maker}</span>` : ''}</li>`).join('')}</ul></div>`;
+}).join('');
+document.getElementById('cands').innerHTML = CONCEPTS.map(c => `<a href="#c-${c.id}" style="text-decoration:none">${WORDS[c.word](11, 'var(--ink)')}</a>`).join('');
+
+const KINDS = [['direct', 'Menu-bar trackers — the direct competitors'], ['adjacent', 'Adjacent — terminal tools and the optimiser'], ['native', 'Built in']];
+const stars = n => n == null ? '—' : n.toLocaleString('en-US') + ' ★';
+document.getElementById('landscape').innerHTML = `<table>
+  <thead><tr><th>Product</th><th>Brand</th><th>Providers</th><th>What stands out</th><th>Cost</th><th class="num">Stars</th></tr></thead>
+  <tbody>${KINDS.map(([kind, label]) => `<tr class="grp"><td colspan="6" class="mono">${label}</td></tr>` + COMPETITORS.filter(c => c.kind === kind).map(c => `<tr>
+    <td class="name">${c.url ? `<a href="${c.url}">${c.name}</a>` : c.name}<span class="maker">${c.maker}<br>${c.platform}</span></td>
+    <td><span class="tag">${c.tagline}</span><span class="tone">${c.tone}</span></td>
+    <td>${c.providers}</td>
+    <td>${c.standout}</td>
+    <td>${c.price}<span class="sub">${c.licence}</span></td>
+    <td class="num mono">${stars(c.stars)}</td>
+  </tr>`).join('')).join('')}</tbody>
+</table>`;
+
+// Shortlist and notes: per-viewer, this browser only.
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+let shortlist = new Set();
+try { shortlist = new Set(JSON.parse(store.get('brand-board.shortlist') || '[]')); } catch (e) {}
+
+function paintStars() {
+  document.querySelectorAll('.star').forEach(b => b.setAttribute('aria-pressed', shortlist.has(b.dataset.id) ? 'true' : 'false'));
+  document.querySelectorAll('.chip').forEach(ch => ch.classList.toggle('starred', shortlist.has(ch.dataset.id)));
+  const only = document.getElementById('only').checked;
+  document.querySelectorAll('.sheet').forEach(s => s.classList.toggle('hidden', only && !shortlist.has(s.dataset.id)));
+}
+document.querySelectorAll('.star').forEach(b => b.addEventListener('click', () => {
+  const id = b.dataset.id;
+  if (shortlist.has(id)) shortlist.delete(id); else shortlist.add(id);
+  store.set('brand-board.shortlist', JSON.stringify([...shortlist]));
+  paintStars();
+}));
+document.getElementById('only').addEventListener('change', paintStars);
+document.getElementById('zoom').addEventListener('change', e => document.body.classList.toggle('zoom2', e.target.checked));
+document.querySelectorAll('.notes').forEach(t => {
+  t.value = store.get('brand-board.notes.' + t.dataset.id) || '';
+  t.addEventListener('input', () => store.set('brand-board.notes.' + t.dataset.id, t.value));
+});
+paintStars();
+
+// Highlight the chip for the sheet in view.
+if ('IntersectionObserver' in window) {
+  const chips = [...document.querySelectorAll('.chip')];
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) chips.forEach(ch => ch.classList.toggle('active', ch.dataset.id === en.target.dataset.id));
+    });
+  }, { rootMargin: '-45% 0px -45% 0px' });
+  document.querySelectorAll('.sheet').forEach(s => io.observe(s));
+}
+</script>

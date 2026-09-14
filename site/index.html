@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Burn — see how fast you're burning through your AI plans</title>
+<meta name="description" content="A menu-bar app for the Mac: every AI account — Claude, ChatGPT, Grok, Gemini, Cursor, Copilot — how much is left, how fast it's going, and when it runs out. Free and open source.">
+<meta property="og:title" content="Burn — see how fast you're burning through your AI plans">
+<meta property="og:description" content="One menu-bar ring for every AI account. How much is left, how fast it's going, when it runs out.">
+<meta property="og:image" content="https://burn-1hx.pages.dev/assets/og.png">
+<meta name="theme-color" content="#0B1322" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F6F4F0" media="(prefers-color-scheme: light)">
+<link rel="icon" href="assets/burn-midnight.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,600;0,6..12,700;1,6..12,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
+<style>
+:root{
+  --bg:#0B1322;--bg2:#111929;--card:#151f31;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+  --ink:#F3F4F6;--ink2:#B8C0CF;--mute:#7C8798;
+  --ember1:#BD0029;--ember2:#E20C29;--ember3:#FA3435;--ember4:#FF583F;--ember:#F32132;
+  --green:#5ac778;--amber:#f2c972;--red:#de2f26;
+  --slate:#1b212a;--slate2:#222832;--track:rgba(0,0,0,.35);
+  --glow:.62;--spot:.16;
+  --ease:cubic-bezier(.2,.7,.2,1);--spring:cubic-bezier(.34,1.4,.64,1);
+}
+@media (prefers-color-scheme:light){
+  :root{--bg:#F6F4F0;--bg2:#FFFFFF;--card:#FFFFFF;--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.14);--ink:#141826;--ink2:#3E4658;--mute:#6E7787;--glow:.32;--spot:.09}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 "Nunito Sans",ui-sans-serif,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+.mi{font-family:"Material Icons Outlined";font-size:20px;line-height:1;display:inline-block;vertical-align:middle;font-feature-settings:"liga";font-style:normal}
+.wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+.dark-only{display:inline}.light-only{display:none}
+@media (prefers-color-scheme:light){.dark-only{display:none}.light-only{display:inline}}
+
+/* ── reveal system ───────────────────────────────────────── */
+[data-reveal]{opacity:0;transform:translateY(22px)}
+[data-reveal].in{opacity:1;transform:none;transition:opacity .8s var(--ease),transform .8s var(--ease);transition-delay:calc(var(--i,0)*90ms)}
+
+/* ── nav ─────────────────────────────────────────────────── */
+#prog{position:fixed;left:0;top:0;height:2px;width:100%;background:linear-gradient(90deg,var(--ember1),var(--ember3),var(--ember4));transform-origin:0 50%;transform:scaleX(0);z-index:60;pointer-events:none}
+.top{position:sticky;top:0;z-index:50;transition:background .35s,border-color .35s,backdrop-filter .35s}
+.top.stuck{background:color-mix(in srgb,var(--bg) 74%,transparent);-webkit-backdrop-filter:blur(16px) saturate(1.4);backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--line)}
+nav{display:flex;align-items:center;justify-content:space-between;height:70px}
+.wordmark{display:inline-flex;align-items:center;gap:10px;text-decoration:none}
+.wordmark img{width:34px;height:34px;transition:transform .5s var(--spring)}
+.wordmark:hover img{transform:rotate(-8deg) scale(1.06)}
+.wordmark b{font:800 26px/1 "Plus Jakarta Sans",system-ui,sans-serif;letter-spacing:-.03em}
+nav .links{display:flex;gap:26px;font-weight:600;font-size:15px}
+nav .links a{position:relative;text-decoration:none;color:var(--ink2);padding:6px 0;transition:color .2s}
+nav .links a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:2px;background:var(--ember);transform:scaleX(0);transform-origin:0 50%;transition:transform .3s var(--ease)}
+nav .links a:hover{color:var(--ink)}
+nav .links a:hover::after{transform:scaleX(1)}
+
+/* ── hero ────────────────────────────────────────────────── */
+.hero{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);gap:48px;align-items:center;padding:56px 0 80px;position:relative;contain:paint}
+h1{font:800 clamp(38px,5.2vw,60px)/1.02 "Plus Jakarta Sans",system-ui,sans-serif;letter-spacing:-.035em;margin:0 0 20px;text-wrap:balance}
+h1[data-reveal]{opacity:1;transform:none}
+h1 .w{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .04em .14em;margin:0 -.04em -.14em}
+h1 .w>*{display:inline-block;transform:translateY(112%);transition:transform .9s var(--ease) calc(var(--i)*55ms + 80ms)}
+h1.in .w>*{transform:none}
+h1 em{font-style:normal;background:linear-gradient(90deg,var(--ember2) 0%,var(--ember4) 30%,#ffb08a 50%,var(--ember3) 70%,var(--ember2) 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 8s linear infinite}
+@keyframes shimmer{to{background-position:250% 0}}
+.lede{font-size:19px;line-height:1.55;color:var(--ink2);margin:0 0 30px;max-width:52ch;text-wrap:pretty}
+.cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{position:relative;display:inline-flex;align-items:center;gap:9px;padding:14px 22px;border-radius:12px;font-weight:700;font-size:16px;text-decoration:none;border:1px solid transparent;transition:transform .25s var(--spring),box-shadow .25s,border-color .2s,color .2s;cursor:pointer;overflow:hidden;isolation:isolate}
+.btn .mi{transition:transform .35s var(--spring)}
+.btn.primary{color:#fff;background:linear-gradient(135deg,var(--ember1),var(--ember3) 60%,var(--ember4));box-shadow:0 10px 28px -10px rgba(226,12,41,.55)}
+.btn.primary::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.28) 50%,transparent 70%);transform:translateX(-120%);transition:transform .7s var(--ease);z-index:-1}
+.btn.primary:hover{transform:translateY(-2px);box-shadow:0 18px 36px -12px rgba(226,12,41,.7)}
+.btn.primary:hover::after{transform:translateX(120%)}
+.btn.primary:hover .mi{transform:translateY(2px)}
+.btn.ghost{color:var(--ink);border-color:var(--line2);background:var(--bg2)}
+.btn.ghost:hover{border-color:var(--ink2);transform:translateY(-2px)}
+.brew{display:flex;align-items:center;gap:10px;margin-top:14px;padding:11px 12px 11px 16px;border:1px solid var(--line);border-radius:12px;background:var(--bg2);font:500 14.5px "JetBrains Mono",ui-monospace,Menlo,monospace;color:var(--ink2);max-width:100%;overflow:hidden;transition:border-color .3s,box-shadow .3s}
+.brew.flash{border-color:var(--ember3);box-shadow:0 0 0 4px rgba(243,33,50,.15)}
+.brew span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brew .dollar{color:var(--mute)}
+.brew button{margin-left:auto;flex:none;border:1px solid var(--line2);background:transparent;color:var(--ink2);border-radius:8px;padding:6px 8px;cursor:pointer;font:600 12px "Nunito Sans",sans-serif;display:inline-flex;align-items:center;gap:5px;min-width:74px;justify-content:center;transition:color .2s,border-color .2s,background .2s}
+.brew button:hover{color:var(--ink);border-color:var(--ink2)}
+.brew button.ok{color:#fff;background:var(--ember);border-color:var(--ember)}
+.req{margin:16px 0 0;font-size:14px;color:var(--mute)}
+.req b{color:var(--ink2);font-weight:600}
+
+/* the product, alive */
+.shot{position:relative;min-height:600px;display:grid;grid-template-columns:minmax(0,1fr);place-items:center}
+.shot[data-reveal]{transform:translateY(28px) scale(.97)}
+.shot[data-reveal].in{transition-duration:1s}
+.glow{position:absolute;left:50%;top:50%;width:640px;height:640px;margin:-380px 0 0 -380px;border-radius:50%;background:radial-gradient(circle,rgba(250,52,53,var(--glow)) 0%,rgba(226,12,41,calc(var(--glow)*.35)) 42%,transparent 70%);filter:blur(36px);animation:breathe 7s ease-in-out infinite alternate;pointer-events:none}
+@keyframes breathe{from{transform:scale(.94);opacity:.8}to{transform:scale(1.08);opacity:1}}
+.sparks{position:absolute;inset:-40px -20px 0;pointer-events:none;overflow:hidden}
+.sparks i{position:absolute;left:var(--x);bottom:40px;width:var(--s);height:var(--s);border-radius:50%;background:#ffb08a;box-shadow:0 0 6px 1px rgba(255,88,63,.7);opacity:0;animation:rise var(--d) linear var(--dl) infinite}
+@keyframes rise{0%{transform:translate3d(0,0,0);opacity:0}8%{opacity:.95}55%{transform:translate3d(var(--sw),-300px,0);opacity:.7}100%{transform:translate3d(calc(var(--sw)*-.4),-600px,0);opacity:0}}
+.mac{width:100%;max-width:420px;position:relative;z-index:1}
+.menubar{display:flex;justify-content:flex-end;align-items:center;gap:14px;height:26px;padding:0 12px;background:rgba(18,22,30,.82);color:#d7dbe2;font:500 12px -apple-system,"SF Pro Text",system-ui,sans-serif;border-radius:9px;border:1px solid rgba(255,255,255,.08);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.menubar .mi{font-size:15px;color:#d7dbe2}
+.menubar .ring{display:grid;place-items:center;margin-right:2px}
+.menubar .ring svg{width:16px;height:16px;transform:rotate(-90deg)}
+.menubar .trk{fill:none;stroke:rgba(255,255,255,.22);stroke-width:2.4}
+.menubar .arc{fill:none;stroke:var(--red);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:37.7;stroke-dashoffset:37.7}
+.panel{background:var(--slate);border-radius:14px;padding:10px;margin-top:8px;box-shadow:0 48px 90px -30px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.07);font:500 13px/1.3 -apple-system,"SF Pro Text",system-ui,sans-serif;color:#f3f3f3}
+@media (prefers-color-scheme:light){.panel{box-shadow:0 40px 80px -30px rgba(20,24,38,.45),0 0 0 1px rgba(0,0,0,.12)}}
+.ph{display:flex;align-items:center;gap:8px;padding:5px 8px 11px}
+.ph .mark{width:22px;height:25px}
+.ph b{font:800 20px/1 "Plus Jakarta Sans",system-ui,sans-serif;letter-spacing:-.03em;margin-right:auto;color:#fff}
+.ph .mi{color:#c9ced6;font-size:18px;padding:3px;border-radius:6px;transition:background .2s,transform .5s var(--ease)}
+.ph .mi:hover{background:rgba(255,255,255,.08)}
+.ph .mi.spin:hover{transform:rotate(180deg)}
+.acct{background:var(--slate2);border-radius:10px;padding:11px 12px 12px;margin-top:8px;position:relative;transition:background .6s,transform .25s var(--spring),box-shadow .25s}
+.acct.warn{background:#3a2a2c}
+.acct.amber{background:#3a3730}
+.acct:hover{transform:translateX(2px)}
+.ah{display:flex;align-items:center;gap:8px;height:22px;margin-bottom:8px}
+.tile{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;flex:none;transform:scale(.5);opacity:0;transition:transform .55s var(--spring) calc(var(--i)*90ms + 120ms),opacity .3s calc(var(--i)*90ms + 120ms)}
+.live .tile{transform:none;opacity:1}
+.tile svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tile.claude{background:#E8562A}.tile.gpt{background:#2fa27a}.tile.grok{background:#f2f2f2}.tile.cursor{background:#f2f2f2}.tile.copilot{background:#6f5cf5}
+.tile.grok svg,.tile.cursor svg{stroke:#111}
+.nm{font-weight:700;font-size:13.5px;color:#fff}
+.pl{color:#a1a1a1;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spark{margin-left:auto;width:64px;height:16px;flex:none;fill:none;stroke:#cfd4dc;stroke-width:1.4;opacity:.85;transition:opacity .2s}
+.rowmenu{position:absolute;right:10px;top:9px;display:flex;gap:3px;opacity:0;transform:translateY(-4px);transition:opacity .2s,transform .25s var(--ease);pointer-events:none}
+.rowmenu .mi{font-size:14px;color:#e6e9ee;padding:5px;border-radius:6px;background:rgba(255,255,255,.1)}
+.acct:hover .rowmenu{opacity:1;transform:none}
+.acct:hover .spark{opacity:0}
+.line{display:grid;grid-template-columns:60px 1fr 40px 96px;align-items:center;gap:10px;margin-top:6px;font-size:11.5px}
+.lbl{color:#a1a1a1}
+.meter{position:relative;height:6px;border-radius:3px;background:var(--track)}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;width:0;background:var(--c,var(--green))}
+.meter .tk{position:absolute;top:-2px;bottom:-2px;width:1.5px;background:#a1a1a1;opacity:0;transition:opacity .4s,left .1s linear}
+.meter .tk.in{background:#1b212a}
+.tk.on{opacity:.95}
+.pct{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:#fff}
+.reset{color:#a1a1a1;display:flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums;white-space:nowrap;transition:color .6s}
+.reset .mi{font-size:12px;color:inherit}
+.reset.fast{color:#f1cc71}
+.foot{color:#a1a1a1;font-size:11.5px;margin-top:8px}
+
+/* ── sections ────────────────────────────────────────────── */
+.section{padding:72px 0;border-top:1px solid var(--line);scroll-margin-top:72px}
+.kicker{font:700 12px/1 "Nunito Sans",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ember);margin:0 0 14px}
+h2{font:800 clamp(28px,3.4vw,38px)/1.1 "Plus Jakarta Sans",system-ui,sans-serif;letter-spacing:-.03em;margin:0 0 14px;text-wrap:balance}
+.sub{font-size:17.5px;color:var(--ink2);max-width:60ch;margin:0 0 34px;text-wrap:pretty}
+
+/* the pace story */
+.anatomy{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:44px;align-items:center}
+.stage{position:relative;padding:58px 0 8px}
+.stage .acct{width:100%;max-width:560px;margin:0;padding:14px 16px 16px;transform:none;transition:background .8s,opacity .4s}
+.stage .ah{height:26px;margin-bottom:12px;gap:10px}
+.stage .tile{width:26px;height:26px;border-radius:7px}
+.stage .tile svg{width:16px;height:16px}
+.stage .nm{font-size:16px}.stage .pl{font-size:13px}
+.stage .spark{width:76px;height:18px}
+.stage .line{grid-template-columns:76px 1fr 48px 112px;font-size:13.5px;margin-top:10px;gap:12px}
+.stage .meter{height:8px;border-radius:4px}.stage .meter i{border-radius:4px}
+.stage .meter .tk{top:-3px;bottom:-3px;width:2px}
+.stage .reset .mi{font-size:14px}
+.stage .acct:hover{transform:none}
+.stage.fade .acct{opacity:0}
+.tip{width:100%;max-width:560px;margin-top:12px;padding:10px 14px;border-radius:10px;background:var(--bg2);border:1px solid var(--line2);font-size:14px;color:var(--ink2);opacity:0;transform:translateY(-6px);transition:opacity .35s,transform .45s var(--ease)}
+.tip b{color:var(--ink);font-weight:700}
+.tip.on{opacity:1;transform:none}
+.notif{position:absolute;right:-16px;top:4px;display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:start;width:340px;max-width:calc(100% + 16px);padding:10px 12px;border-radius:14px;background:rgba(36,40,48,.86);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);color:#f3f3f3;box-shadow:0 20px 50px -16px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.1);font:400 12px/1.35 -apple-system,"SF Pro Text",system-ui,sans-serif;opacity:0;transform:translateX(28px) scale(.98);transition:opacity .4s,transform .6s var(--spring);z-index:2}
+.notif.on{opacity:1;transform:none}
+.notif img{width:34px;height:34px;border-radius:8px}
+.notif b{display:block;font-weight:700;font-size:12.5px}
+.notif .nt{display:block}
+.notif .nb{display:block;color:#b9bec7}
+.notif .when{color:#9aa0aa;font-size:11px}
+.notes{display:grid;gap:16px}
+.note{display:grid;grid-template-columns:30px 1fr;gap:12px;align-items:start;padding:12px 12px 12px 10px;border-radius:12px;transition:background .4s}
+.note .n{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line2);color:var(--mute);display:grid;place-items:center;font:700 12px "Nunito Sans",sans-serif;transition:background .4s,color .4s,border-color .4s,transform .4s var(--spring)}
+.note b{display:block;font-weight:700;font-size:15px;color:var(--ink2);transition:color .4s}
+.note span{font-size:14.5px;color:var(--mute);transition:color .4s}
+.note.on{background:var(--bg2)}
+.note.on .n{background:var(--ember);border-color:var(--ember);color:#fff;transform:scale(1.08)}
+.note.on b{color:var(--ink)}
+.note.on span{color:var(--ink2)}
+
+/* features */
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.feat{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 22px 20px;overflow:hidden;transition:transform .3s var(--spring),border-color .3s,box-shadow .3s}
+.feat::before{content:"";position:absolute;inset:0;background:radial-gradient(260px circle at var(--mx,50%) var(--my,0%),rgba(250,52,53,var(--spot)),transparent 60%);opacity:0;transition:opacity .35s;pointer-events:none}
+.feat:hover{transform:translateY(-4px);border-color:rgba(243,33,50,.35);box-shadow:0 24px 50px -30px rgba(0,0,0,.5)}
+.feat:hover::before{opacity:1}
+.feat .mi{color:var(--ember);font-size:24px;margin-bottom:12px;transition:transform .4s var(--spring)}
+.feat:hover .mi{transform:translateY(-2px) scale(1.12)}
+.feat h3{font:800 17px/1.25 "Plus Jakarta Sans",system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 6px;position:relative}
+.feat p{margin:0;font-size:15px;color:var(--ink2);line-height:1.5;position:relative}
+.feat code{font:500 13px "JetBrains Mono",ui-monospace,Menlo,monospace;background:var(--bg);padding:1px 6px;border-radius:5px;color:var(--ink)}
+
+/* worth */
+.stat{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:center}
+.big{font:800 clamp(56px,7vw,96px)/1 "Plus Jakarta Sans",system-ui,sans-serif;letter-spacing:-.045em;background:linear-gradient(90deg,var(--ember2),var(--ember4));-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums}
+.big small{display:block;font:600 15px/1.4 "Nunito Sans",sans-serif;letter-spacing:0;color:var(--mute);-webkit-text-fill-color:var(--mute);margin-top:10px}
+.cmp{display:grid;gap:10px;margin-top:26px;font-size:14px;color:var(--ink2)}
+.cmp div{display:grid;grid-template-columns:100px 1fr 64px;gap:12px;align-items:center}
+.cmp b{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+.cmp .bar{height:8px;border-radius:4px;background:var(--track);overflow:hidden}
+.cmp .bar i{display:block;height:100%;width:0;border-radius:4px;background:var(--mute);transition:width 1.6s var(--ease) .2s}
+.cmp .bar i.hot{background:linear-gradient(90deg,var(--ember1),var(--ember4));transition-delay:.5s}
+.in .cmp .bar i{width:var(--w)}
+
+/* terminal */
+.term{background:#0d1117;color:#e6edf3;border-radius:14px;padding:16px 18px;font:400 13px/1.7 "JetBrains Mono",ui-monospace,Menlo,monospace;border:1px solid rgba(255,255,255,.08);overflow-x:auto;box-shadow:0 30px 60px -30px rgba(0,0,0,.6)}
+.term .bar3{display:flex;gap:6px;margin-bottom:12px}
+.term .bar3 i{width:11px;height:11px;border-radius:50%;background:#2c313a}
+.term .bar3 i:first-child{background:#ff5f57}.term .bar3 i:nth-child(2){background:#febc2e}.term .bar3 i:nth-child(3){background:#28c840}
+.term .tl{white-space:pre;min-height:1.7em}
+.term .out{opacity:0;transform:translateX(-6px);transition:opacity .3s,transform .3s var(--ease)}
+.term .out.on{opacity:1;transform:none}
+.term .p2{display:none}.term .p2.on{display:block}
+.term .c{color:#8b949e}.term .g{color:#5ad17b}.term .y{color:#f2c972}.term .r{color:#ff7b72}
+.term .cur{display:none;width:7px;height:1.1em;background:#e6edf3;vertical-align:-3px;margin-left:1px;animation:blink 1s steps(2) infinite}
+.term .cur.on{display:inline-block}
+@keyframes blink{to{opacity:0}}
+
+/* install */
+.install{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;transition:transform .3s var(--spring),border-color .3s}
+.card:hover{transform:translateY(-3px);border-color:var(--line2)}
+.card h3{font:800 18px "Plus Jakarta Sans",system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 6px}
+.card p{margin:0 0 14px;color:var(--ink2);font-size:15px}
+.priv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.priv div{font-size:15px;color:var(--ink2)}
+.priv b{display:block;color:var(--ink);font-weight:700;margin-bottom:4px}
+
+footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--mute);font-size:14px}
+footer .row2{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
+footer a{color:var(--ink2);text-decoration:none;transition:color .2s}
+footer a:hover{color:var(--ink)}
+:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+
+@media (max-width:900px){
+  .hero,.anatomy,.stat,.install{grid-template-columns:minmax(0,1fr)}
+  .hero{padding-top:28px}
+  .shot{min-height:0;padding:40px 0 20px}
+  .grid,.priv{grid-template-columns:repeat(2,minmax(0,1fr))}
+  nav .links{display:none}
+  .notif{right:0;top:4px;width:min(340px,100%)}
+}
+@media (max-width:600px){.grid,.priv{grid-template-columns:minmax(0,1fr)}.line,.stage .line{grid-template-columns:54px 1fr 36px 80px;gap:8px}.stage .acct{padding:12px}.pl{display:none}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;transition-delay:0ms!important;scroll-behavior:auto!important}
+  [data-reveal]{opacity:1;transform:none}
+  h1 .w>*{transform:none}
+  .sparks{display:none}
+}
+</style>
+</head>
+<body>
+<div id="prog" aria-hidden="true"></div>
+<header class="top" id="top">
+  <div class="wrap">
+    <nav>
+      <a class="wordmark" href="#" aria-label="Burn" data-reveal style="--i:0">
+        <img class="dark-only" src="assets/burn-midnight.svg" alt="">
+        <img class="light-only" src="assets/burn-porcelain.svg" alt="">
+        <b>burn</b>
+      </a>
+      <div class="links" data-reveal style="--i:1">
+        <a href="#pace">Pace</a>
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/tmass1/burn">GitHub</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="hero">
+    <div>
+      <h1 data-reveal aria-label="See how fast you're burning through your AI plans.">
+        <span class="w" style="--i:0"><span>See</span></span>
+        <span class="w" style="--i:1"><span>how</span></span>
+        <span class="w" style="--i:2"><span>fast</span></span>
+        <span class="w" style="--i:3"><span>you're</span></span>
+        <span class="w" style="--i:4"><em>burning through</em></span>
+        <span class="w" style="--i:5"><span>your</span></span>
+        <span class="w" style="--i:6"><span>AI</span></span>
+        <span class="w" style="--i:7"><span>plans.</span></span>
+      </h1>
+      <p class="lede" data-reveal style="--i:4">One menu-bar ring for every account — Claude, ChatGPT, Grok, Gemini, Cursor, Copilot. How much is left, how fast it's going, and when it runs out at this pace. Then a command that opens Claude Code on the account with room.</p>
+      <div class="cta" data-reveal style="--i:5">
+        <a class="btn primary" href="https://github.com/tmass1/burn/releases/latest/download/Burn.dmg"><span class="mi" aria-hidden="true">download</span>Download for macOS</a>
+        <a class="btn ghost" href="https://github.com/tmass1/burn"><span class="mi" aria-hidden="true">code</span>Source</a>
+      </div>
+      <div class="brew" data-reveal style="--i:6"><span class="dollar">$</span><span id="brew">brew install --cask tmass1/tap/burn</span><button type="button" data-copy="brew install --cask tmass1/tap/burn"><span class="mi" style="font-size:14px" aria-hidden="true">content_copy</span><span>Copy</span></button></div>
+      <p class="req" data-reveal style="--i:7"><b>macOS 14+</b> · Apple silicon and Intel · signed and notarized · <b>free</b>, MIT · no account, no telemetry</p>
+    </div>
+
+    <div class="shot" id="panel-shot" data-reveal style="--i:2">
+      <div class="glow" aria-hidden="true"></div>
+      <div class="sparks" id="sparks" aria-hidden="true"></div>
+      <div class="mac" role="img" aria-label="The Burn panel: one row per account with a bar per window, a pace tick, the percentage used and when it resets">
+        <div class="menubar" aria-hidden="true">
+          <span class="ring"><svg viewBox="0 0 16 16"><circle class="trk" cx="8" cy="8" r="6"/><circle class="arc" id="mbring" cx="8" cy="8" r="6"/></svg></span>
+          <span class="mi">wifi</span>
+          <span class="mi">battery_full</span>
+          <span id="clock">Sat 12:51 PM</span>
+        </div>
+        <div class="panel" id="panel">
+          <div class="ph">
+            <svg class="mark" viewBox="180 139 624 719" aria-hidden="true"><defs><linearGradient id="pm" x1="317" y1="766" x2="703" y2="245" gradientUnits="userSpaceOnUse"><stop stop-color="#BD0029"/><stop offset=".38" stop-color="#E20C29"/><stop offset=".76" stop-color="#FA3435"/><stop offset="1" stop-color="#FF583F"/></linearGradient></defs><path d="M 480,326 C 350,319 242,416 238,550 C 233,694 344,800 483,800 C 632,800 746,692 746,551 C 746,512 740,479 729,449" stroke="url(#pm)" stroke-width="116" stroke-linecap="round" fill="none"/><path d="M 679,139 C 669,191 720,216 727,261 C 735,303 705,337 674,367 C 668,331 628,319 624,279 C 618,232 654,188 679,139 Z" fill="url(#pm)"/></svg>
+            <b>burn</b>
+            <span class="mi spin" aria-hidden="true">refresh</span>
+            <span class="mi" aria-hidden="true">settings</span>
+          </div>
+
+          <div class="acct warn" style="--i:0">
+            <div class="ah">
+              <span class="tile claude" style="--i:0"><svg viewBox="0 0 16 16"><path d="M8 2v12M2 8h12M3.8 3.8l8.4 8.4M12.2 3.8l-8.4 8.4"/></svg></span>
+              <span class="nm">Personal</span><span class="pl">Max 5× · $100/mo</span>
+              <svg class="spark" viewBox="0 0 64 16" aria-hidden="true"><path d="M0 14 L10 2 L10 14 L22 2 L22 14 L36 2 L36 14 L50 2 L50 14 L64 3"/></svg>
+              <span class="rowmenu" aria-hidden="true"><i class="mi">terminal</i><i class="mi">content_copy</i><i class="mi">visibility_off</i></span>
+            </div>
+            <div class="line"><span class="lbl">Session</span><div class="meter" data-w="88" style="--c:var(--red)"><i></i><span class="tk in" style="left:57%"></span></div><span class="pct">0%</span><span class="reset" data-fast><i class="mi" aria-hidden="true">schedule</i><span>2h 9m</span></span></div>
+            <div class="line"><span class="lbl">Weekly</span><div class="meter" data-w="63" style="--c:var(--amber)"><i></i><span class="tk" style="left:82%"></span></div><span class="pct">0%</span><span class="reset"><i class="mi" aria-hidden="true">schedule</i><span>Sun 7:35 PM</span></span></div>
+          </div>
+
+          <div class="acct" style="--i:1">
+            <div class="ah">
+              <span class="tile claude" style="--i:1"><svg viewBox="0 0 16 16"><path d="M8 2v12M2 8h12M3.8 3.8l8.4 8.4M12.2 3.8l-8.4 8.4"/></svg></span>
+              <span class="nm">Studio</span><span class="pl">Team · Max 5× · $150/mo</span>
+              <svg class="spark" viewBox="0 0 64 16" aria-hidden="true"><path d="M0 12 L6 7 L6 12 L14 6 L14 12 L22 7 L22 12 L30 5 L30 12 L40 7 L40 12 L50 6 L50 12 L64 5"/></svg>
+              <span class="rowmenu" aria-hidden="true"><i class="mi">terminal</i><i class="mi">content_copy</i><i class="mi">visibility_off</i></span>
+            </div>
+            <div class="line"><span class="lbl">Session</span><div class="meter" data-w="31"><i></i><span class="tk" style="left:56%"></span></div><span class="pct">0%</span><span class="reset"><i class="mi" aria-hidden="true">schedule</i><span>2h 13m</span></span></div>
+            <div class="line"><span class="lbl">Weekly</span><div class="meter" data-w="44"><i></i><span class="tk in" style="left:35%"></span></div><span class="pct">0%</span><span class="reset"><i class="mi" aria-hidden="true">schedule</i><span>Thu 2:47 AM</span></span></div>
+            <div class="line"><span class="lbl">Fable</span><div class="meter" data-w="12"><i></i></div><span class="pct">0%</span><span class="reset"><i class="mi" aria-hidden="true">schedule</i><span>Thu 2:47 AM</span></span></div>
+          </div>
+
+          <div class="acct amber" style="--i:2">
+            <div class="ah">
+              <span class="tile gpt" style="--i:2"><svg viewBox="0 0 16 16"><path d="M8 1.8l5.4 3.1v6.2L8 14.2l-5.4-3.1V4.9z"/></svg></span>
+              <span class="nm">ChatGPT</span><span class="pl">Plus · Codex quota · $20/mo</span>
+              <svg class="spark" viewBox="0 0 64 16" aria-hidden="true"><path d="M0 13 L12 3 L12 13 L26 3 L26 13 L40 3 L40 13 L54 3 L54 13 L64 6"/></svg>
+              <span class="rowmenu" aria-hidden="true"><i class="mi">open_in_new</i><i class="mi">visibility_off</i></span>
+            </div>
+            <div class="line"><span class="lbl">Session</span><div class="meter" data-w="53"><i></i><span class="tk in" style="left:19%"></span></div><span class="pct">0%</span><span class="reset" data-fast><i class="mi" aria-hidden="true">schedule</i><span>4h 4m</span></span></div>
+            <div class="line"><span class="lbl">Weekly</span><div class="meter" data-w="66" style="--c:var(--amber)"><i></i><span class="tk in" style="left:32%"></span></div><span class="pct">0%</span><span class="reset"><i class="mi" aria-hidden="true">schedule</i><span>Thu 7:35 AM</span></span></div>
+            <div class="foot">2 reset credits</div>
+          </div>
+
+          <div class="acct" style="--i:3">
+            <div class="ah">
+              <span class="tile grok" style="--i:3"><svg viewBox="0 0 16 16"><path d="M11.5 3.5l-7 9"/></svg></span>
+              <span class="nm">Grok</span><span class="pl">SuperGrok · weekly pool · $30/mo</span>
+              <span class="rowmenu" aria-hidden="true"><i class="mi">open_in_new</i><i class="mi">visibility_off</i></span>
+            </div>
+            <div class="line"><span class="lbl">Weekly</span><div class="meter" data-w="7"><i></i><span class="tk" style="left:54%"></span></div><span class="pct">0%</span><span class="reset"><i class="mi" aria-hidden="true">schedule</i><span>Tue 5:11 PM</span></span></div>
+          </div>
+
+          <div class="acct" style="--i:4">
+            <div class="ah">
+              <span class="tile cursor" style="--i:4"><svg viewBox="0 0 16 16"><path d="M8 2l5.2 3v6L8 14l-5.2-3V5z M8 8l5.2-3M8 8v6M8 8L2.8 5"/></svg></span>
+              <span class="nm">Cursor</span><span class="pl">Pro+ · included usage · $60/mo</span>
+              <span class="rowmenu" aria-hidden="true"><i class="mi">open_in_new</i><i class="mi">visibility_off</i></span>
+            </div>
+            <div class="line"><span class="lbl">Monthly</span><div class="meter" data-w="51"><i></i><span class="tk in" style="left:44%"></span></div><span class="pct">0%</span><span class="reset"><i class="mi" aria-hidden="true">schedule</i><span>Sep 29</span></span></div>
+          </div>
+
+          <div class="acct" style="--i:5">
+            <div class="ah">
+              <span class="tile copilot" style="--i:5"><svg viewBox="0 0 16 16"><path d="M8 2.5c.6 2.8 2.2 4.4 5 5-2.8.6-4.4 2.2-5 5-.6-2.8-2.2-4.4-5-5 2.8-.6 4.4-2.2 5-5z" fill="#fff" stroke="none"/></svg></span>
+              <span class="nm">Copilot</span><span class="pl">Pro · monthly · $10/mo</span>
+              <span class="rowmenu" aria-hidden="true"><i class="mi">open_in_new</i><i class="mi">visibility_off</i></span>
+            </div>
+            <div class="line"><span class="lbl">Premium</span><div class="meter" data-w="22"><i></i><span class="tk" style="left:43%"></span></div><span class="pct">0%</span><span class="reset"><i class="mi" aria-hidden="true">schedule</i><span>Sep 29</span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="pace">
+    <p class="kicker" data-reveal>One row says it all</p>
+    <h2 data-reveal style="--i:1">Not just how much is left. Whether it lasts.</h2>
+    <p class="sub" data-reveal style="--i:2">Every bar carries a tick where the window would be if you used it evenly from start to reset. Burn works out your recent rate from its own history, so a reset time turns yellow the moment a window will run out before it resets — and tells you when.</p>
+    <div class="anatomy">
+      <div class="stage" id="stage" data-reveal style="--i:3" aria-hidden="true">
+        <div class="acct" id="st-card">
+          <div class="ah">
+            <span class="tile claude" style="transform:none;opacity:1"><svg viewBox="0 0 16 16"><path d="M8 2v12M2 8h12M3.8 3.8l8.4 8.4M12.2 3.8l-8.4 8.4"/></svg></span>
+            <span class="nm">Personal</span><span class="pl">Max 5× · $100/mo</span>
+            <svg class="spark" viewBox="0 0 64 16" aria-hidden="true"><path d="M0 14 L10 2 L10 14 L22 2 L22 14 L36 2 L36 14 L50 2 L50 14 L64 3"/></svg>
+          </div>
+          <div class="line"><span class="lbl">Session</span><div class="meter"><i id="s-fill" style="width:12%"></i><span class="tk on" id="s-tick" style="left:12%"></span></div><span class="pct" id="s-pct">12%</span><span class="reset" id="s-reset"><i class="mi" aria-hidden="true">schedule</i><span>4h 24m</span></span></div>
+          <div class="line"><span class="lbl">Weekly</span><div class="meter"><i style="width:63%;background:var(--amber)"></i><span class="tk on" style="left:82%"></span></div><span class="pct">63%</span><span class="reset"><i class="mi" aria-hidden="true">schedule</i><span>Sun 7:35 PM</span></span></div>
+        </div>
+        <div class="tip" id="s-tip">At <b>28 %/h</b> this session runs out in <b>25 minutes</b> — 1h 44m before it resets.</div>
+        <div class="notif" id="s-notif" aria-hidden="true">
+          <img src="assets/burn-midnight.svg" alt="">
+          <div><b>Burn</b><span class="nt">Personal session runs out before it resets</span><span class="nb">28 %/h · out in 25m · resets in 2h 9m</span></div>
+          <span class="when">now</span>
+        </div>
+      </div>
+      <div class="notes" data-reveal style="--i:4">
+        <div class="note on"><span class="n">1</span><div><b>The pace tick</b><span>Where even use from start to reset would put you right now. On the tick, you're fine.</span></div></div>
+        <div class="note"><span class="n">2</span><div><b>Past the tick, going fast</b><span>Burn measures your real rate from its own history — no sign-in, no server. The bar tints as it pulls ahead.</span></div></div>
+        <div class="note"><span class="n">3</span><div><b>A yellow reset</b><span>The window won't last. Hover for the sentence; a notification says so once the window is half used, then stays quiet.</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <p class="kicker" data-reveal>What it does</p>
+    <h2 data-reveal style="--i:1">Every account, then the next step.</h2>
+    <p class="sub" data-reveal style="--i:2">The field stops at showing the number. Burn keeps going: which account has room, what your plan is worth, and a command that puts you on it.</p>
+    <div class="grid">
+      <div class="feat" data-reveal style="--i:0"><span class="mi" aria-hidden="true">group</span><h3>As many accounts as you have</h3><p>Several Claude accounts side by side — business, personal, a client's — plus ChatGPT (via Codex), Grok, Gemini, Cursor and Copilot. Sign in right in the app; nothing to paste.</p></div>
+      <div class="feat" data-reveal style="--i:1"><span class="mi" aria-hidden="true">speed</span><h3>Pace, not just a percentage</h3><p>Rate per hour, run-out time and an even-pace marker on every window, from Burn's own seven days of samples. A window that won't last gets a yellow reset and a notification.</p></div>
+      <div class="feat" data-reveal style="--i:2"><span class="mi" aria-hidden="true">terminal</span><h3>Launchers</h3><p>A command per Claude account — <code>claude-atlas</code>, <code>claude-studio</code> — that runs Claude Code signed in as that account. Hover a row for <em>Open Terminal with this account</em>.</p></div>
+      <div class="feat" data-reveal style="--i:3"><span class="mi" aria-hidden="true">data_object</span><h3>A CLI and a status line</h3><p><code>burn</code> prints what the panel knows, <code>burn json</code> for scripts, and <code>burn statusline</code> drops the right account's numbers into Claude Code's status line.</p></div>
+      <div class="feat" data-reveal style="--i:4"><span class="mi" aria-hidden="true">cloud_off</span><h3>Their outage, not your sign-in</h3><p>Anthropic, OpenAI, Cursor and GitHub status pages are checked every five minutes. An incident shows as a chip on the rows it affects instead of a mysterious error.</p></div>
+      <div class="feat" data-reveal style="--i:5"><span class="mi" aria-hidden="true">notifications_active</span><h3>Quiet until it matters</h3><p>A banner when a window passes your threshold, when a low one resets, and when one won't last at this pace. Quiet hours, one banner per window per period.</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="worth">
+    <div class="stat">
+      <div>
+        <p class="kicker" data-reveal>Find out what your plan is worth</p>
+        <h2 data-reveal style="--i:1">Your $150 plan did <span data-count="9254" data-prefix="$">$9,254</span> of API work last month.</h2>
+        <p class="sub" style="margin-bottom:0;--i:2" data-reveal>Burn reads the session logs Claude Code already keeps and prices them at Anthropic's list rates — input, output, cache writes and reads, per model. Under each account's chart: what the last 7 and 30 days would have cost, and the multiple of what the plan costs. A real number from a real month.</p>
+      </div>
+      <div data-reveal style="--i:2">
+        <div class="big"><span data-count="61" data-suffix="×">61×</span><small>what the plan cost — 27,499 messages, 4.45 billion cache-read tokens, priced at list</small></div>
+        <div class="cmp" aria-hidden="true">
+          <div><span>Plan</span><div class="bar"><i style="--w:1.6%"></i></div><b>$150</b></div>
+          <div><span>API list price</span><div class="bar"><i class="hot" style="--w:100%"></i></div><b>$9,254</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="cli">
+    <p class="kicker" data-reveal>In the terminal</p>
+    <h2 data-reveal style="--i:1">The numbers, where the work is.</h2>
+    <p class="sub" data-reveal style="--i:2">Install the command-line tool from Settings and the same data is a keystroke away — and a segment for Claude Code's status line that follows whichever account the session runs as.</p>
+    <div class="term" id="term" data-reveal style="--i:3" aria-label="Terminal session showing burn and burn statusline">
+      <div class="bar3" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="tl"><span class="c">$ </span><span id="cmd1"></span><span class="cur on" id="cur1"></span></div>
+      <div class="tl out">Personal   session <span class="r">88%</span> · resets in 2h 9m · <span class="y">runs out in 25m</span>      weekly <span class="y">63%</span> · resets Sun 7:35 PM</div>
+      <div class="tl out">Studio     session <span class="g">31%</span> · resets in 2h 13m                       weekly <span class="g">44%</span> · resets Thu 2:47 AM</div>
+      <div class="tl out">ChatGPT    session <span class="g">53%</span> · resets in 4h 4m · <span class="y">runs out in 3h 10m</span>   weekly <span class="y">66%</span> · resets Thu 7:35 AM</div>
+      <div class="tl out">Grok       weekly <span class="g">7%</span> · resets Tue 5:11 PM</div>
+      <div class="tl out">Cursor     monthly <span class="g">51%</span> · resets Sep 29</div>
+      <div class="tl out">Copilot    premium <span class="g">22%</span> · resets Sep 29</div>
+      <div class="tl p2" id="p2"><span class="c">$ </span><span id="cmd2"></span><span class="cur" id="cur2"></span></div>
+      <div class="tl out" id="o2">◐ Studio · <span class="g">31%</span> · 2h 13m · wk <span class="g">44%</span><span class="cur" id="cur3"></span></div>
+    </div>
+  </section>
+
+  <section class="section" id="install">
+    <p class="kicker" data-reveal>Install</p>
+    <h2 data-reveal style="--i:1">Two ways in. Both take a minute.</h2>
+    <div class="install">
+      <div class="card" data-reveal style="--i:2">
+        <h3>Download</h3>
+        <p>Signed with a Developer ID and notarized by Apple. Open the disk image, drag Burn to Applications, press ⌥Space.</p>
+        <a class="btn primary" href="https://github.com/tmass1/burn/releases/latest/download/Burn.dmg"><span class="mi" aria-hidden="true">download</span>Download Burn.dmg</a>
+      </div>
+      <div class="card" data-reveal style="--i:3">
+        <h3>Homebrew</h3>
+        <p>The cask lives in a tap; updates come with <code style="font-family:'JetBrains Mono',monospace;font-size:14px">brew upgrade</code>.</p>
+        <div class="brew" style="margin-top:0"><span class="dollar">$</span><span>brew install --cask tmass1/tap/burn</span><button type="button" data-copy="brew install --cask tmass1/tap/burn"><span class="mi" style="font-size:14px" aria-hidden="true">content_copy</span><span>Copy</span></button></div>
+      </div>
+    </div>
+    <div class="priv" style="margin-top:28px">
+      <div data-reveal style="--i:0"><b>Runs on what you already have</b>Reads the sign-ins Claude Code, Codex, the Grok CLI, Antigravity, Cursor and the GitHub CLI keep on your Mac. Nothing sent anywhere except each vendor's own usage endpoint.</div>
+      <div data-reveal style="--i:1"><b>No account, no telemetry</b>Burn has no server. Its data lives in <span style="font-family:'JetBrains Mono',monospace;font-size:13px">~/Library/Application Support/Burn</span> and nowhere else.</div>
+      <div data-reveal style="--i:2"><b>Open source, MIT</b>Swift and SwiftUI, one package, no Xcode project. Read it, build it, change it.</div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="row2" data-reveal>
+      <span>Made by Tommy Massaro. Not affiliated with Anthropic, OpenAI, xAI, Google, Cursor or GitHub.</span>
+      <span style="display:flex;gap:18px"><a href="https://github.com/tmass1/burn">GitHub</a><a href="https://github.com/tmass1/burn/issues">Issues</a><a href="https://github.com/tmass1/burn/releases">Changelog</a><a href="https://github.com/tmass1/burn/blob/main/LICENSE">MIT</a></span>
+    </div>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const clamp01 = v => Math.max(0, Math.min(1, v));
+  const ease = {
+    out: t => 1 - Math.pow(1 - t, 3),
+    outExpo: t => t >= 1 ? 1 : 1 - Math.pow(2, -10 * t),
+    inOut: t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2,
+    in: t => t * t * t,
+  };
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  // ── nav: glass when scrolled, ember line shows how far you've burned through the page
+  const top = $('#top'), prog = $('#prog');
+  let ticking = false;
+  const onScroll = () => {
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(() => {
+      const y = scrollY, h = document.documentElement.scrollHeight - innerHeight;
+      top.classList.toggle('stuck', y > 8);
+      prog.style.transform = `scaleX(${h > 0 ? y / h : 0})`;
+      ticking = false;
+    });
+  };
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+  // ── reveal on scroll
+  const io = new IntersectionObserver(entries => entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el = e.target; el.classList.add('in'); io.unobserve(el);
+    // once revealed, hand the element back to its own hover transitions
+    const i = parseFloat(getComputedStyle(el).getPropertyValue('--i')) || 0;
+    setTimeout(() => el.removeAttribute('data-reveal'), 1100 + i * 90);
+    if (el.id === 'panel-shot') setTimeout(livePanel, reduce ? 0 : 650);
+    if (el.id === 'term') playTerminal();
+  }), { threshold: .15, rootMargin: '0px 0px -6% 0px' });
+  $$('[data-reveal]').forEach(el => io.observe(el));
+
+  // ── menu bar clock
+  const clock = $('#clock');
+  const tick = () => { const d = new Date(); clock.textContent = d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); };
+  tick(); setInterval(tick, 15000);
+
+  // ── sparks behind the panel
+  const sparks = $('#sparks');
+  if (sparks && !reduce) for (let i = 0; i < 16; i++) {
+    const s = document.createElement('i');
+    s.style.setProperty('--x', (10 + Math.random() * 80) + '%');
+    s.style.setProperty('--d', (8 + Math.random() * 8) + 's');
+    s.style.setProperty('--dl', (-Math.random() * 16) + 's');
+    s.style.setProperty('--s', (1.5 + Math.random() * 2) + 'px');
+    s.style.setProperty('--sw', ((Math.random() - .5) * 90) + 'px');
+    sparks.appendChild(s);
+  }
+
+  // ── the hero panel fills like the real thing: bars, numbers, sparklines, then the pace verdicts
+  let panelLive = false;
+  function livePanel() {
+    if (panelLive) return; panelLive = true;
+    const panel = $('#panel'); panel.classList.add('live');
+    const ring = $('#mbring'), C = 37.7;
+    const bars = $$('.meter[data-w]', panel).map((m, i) => ({
+      fill: $('i', m), tk: $('.tk', m), to: +m.dataset.w, pct: $('.pct', m.parentElement), reset: $('.reset', m.parentElement),
+      delay: i * 110, dur: 1100, done: false, primary: i === 0,
+    }));
+    $$('.spark path', panel).forEach((p, i) => {
+      const L = p.getTotalLength();
+      p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
+      requestAnimationFrame(() => { p.style.transition = `stroke-dashoffset 1.3s ${'cubic-bezier(.2,.7,.2,1)'} ${200 + i * 160}ms`; p.style.strokeDashoffset = 0; });
+    });
+    if (reduce) {
+      bars.forEach(b => { b.fill.style.width = b.to + '%'; b.pct.textContent = b.to + '%'; if (b.tk) b.tk.classList.add('on'); if (b.reset.hasAttribute('data-fast')) b.reset.classList.add('fast'); });
+      ring.style.strokeDashoffset = C * (1 - .88); return;
+    }
+    const start = performance.now() + 150;
+    const step = now => {
+      let pending = false;
+      bars.forEach(b => {
+        if (b.done) return;
+        const p = clamp01((now - start - b.delay) / b.dur), e = ease.out(p);
+        b.fill.style.width = (e * b.to) + '%'; b.pct.textContent = Math.round(e * b.to) + '%';
+        if (b.primary) ring.style.strokeDashoffset = C * (1 - e * b.to / 100);
+        if (p >= 1) { b.done = true; if (b.tk) b.tk.classList.add('on'); if (b.reset.hasAttribute('data-fast')) setTimeout(() => b.reset.classList.add('fast'), 350); }
+        else pending = true;
+      });
+      if (pending) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  // ── the pace story: even → fast → won't last, on a loop while it's on screen
+  (() => {
+    const st = $('#stage'); if (!st) return;
+    const card = $('#st-card'), fill = $('#s-fill'), tk = $('#s-tick'), pct = $('#s-pct'), reset = $('#s-reset'), resetText = $('#s-reset span'),
+      tip = $('#s-tip'), notif = $('#s-notif'), notes = $$('#pace .note');
+    const T = 11;
+    const fmt = mins => { const h = Math.floor(mins / 60), m = Math.round(mins % 60); return h ? `${h}h ${m}m` : `${m}m`; };
+    const color = u => u >= 85 ? 'var(--red)' : u >= 60 ? 'var(--amber)' : 'var(--green)';
+    const setNote = i => notes.forEach((n, k) => n.classList.toggle('on', k === i));
+    const render = (used, tickAt, mins, s) => {
+      fill.style.width = used + '%'; fill.style.background = color(used);
+      tk.style.left = tickAt + '%'; tk.classList.toggle('in', tickAt < used - .5);
+      pct.textContent = Math.round(used) + '%'; resetText.textContent = fmt(mins);
+      reset.classList.toggle('fast', s >= 6);
+      card.classList.toggle('amber', used > tickAt + 6 && used < 85);
+      card.classList.toggle('warn', used >= 85);
+      tip.classList.toggle('on', s >= 6.3 && s < 10.3);
+      notif.classList.toggle('on', s >= 7.2 && s < 10.3);
+      st.classList.toggle('fade', s >= 10.5);
+      setNote(s < 3 ? 0 : s < 6 ? 1 : 2);
+    };
+    if (reduce) { render(88, 57, 129, 8); return; }
+    let raf = null, t0 = null;
+    const frame = now => {
+      if (t0 == null) t0 = now;
+      const s = ((now - t0) / 1000) % T;
+      let used, tickAt, mins;
+      if (s < 3) { const p = ease.inOut(s / 3); used = 12 + 18 * p; tickAt = used; mins = 264 - 90 * p; }
+      else if (s < 6) { const p = (s - 3) / 3; used = 30 + 58 * ease.in(p); tickAt = 30 + 27 * p; mins = 174 - 45 * p; }
+      else { used = 88; tickAt = 57; mins = 129; }
+      render(used, tickAt, mins, s);
+      raf = requestAnimationFrame(frame);
+    };
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { if (!raf) { t0 = null; raf = requestAnimationFrame(frame); } }
+      else if (raf) { cancelAnimationFrame(raf); raf = null; }
+    }, { threshold: .3 }).observe(st);
+  })();
+
+  // ── numbers count up when they arrive
+  $$('[data-count]').forEach(el => {
+    const to = +el.dataset.count, pre = el.dataset.prefix || '', suf = el.dataset.suffix || '';
+    const fmt = v => pre + Math.round(v).toLocaleString('en-US') + suf;
+    if (reduce) { el.textContent = fmt(to); return; }
+    el.textContent = fmt(0);
+    new IntersectionObserver(([e], obs) => {
+      if (!e.isIntersecting) return; obs.disconnect();
+      const start = performance.now(), dur = 1900;
+      const step = now => { const p = clamp01((now - start) / dur); el.textContent = fmt(ease.outExpo(p) * to); if (p < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    }, { threshold: .6 }).observe(el);
+  });
+
+  // ── terminal: typed, then answered
+  let termPlayed = false;
+  const typeInto = (el, text, speed = 60) => new Promise(res => {
+    let i = 0; el.textContent = '';
+    const id = setInterval(() => { el.textContent = text.slice(0, ++i); if (i >= text.length) { clearInterval(id); res(); } }, speed);
+  });
+  async function playTerminal() {
+    if (termPlayed) return; termPlayed = true;
+    const term = $('#term'), outs = $$('.out', term).filter(o => o.id !== 'o2');
+    if (reduce) { $('#cmd1').textContent = 'burn'; $('#cmd2').textContent = 'burn statusline'; $('#p2').classList.add('on'); $$('.out', term).forEach(o => o.classList.add('on')); $('#cur1').classList.remove('on'); $('#cur3').classList.add('on'); return; }
+    await wait(500);
+    await typeInto($('#cmd1'), 'burn');
+    await wait(320); $('#cur1').classList.remove('on');
+    for (const o of outs) { o.classList.add('on'); await wait(110); }
+    await wait(900);
+    $('#p2').classList.add('on'); $('#cur2').classList.add('on');
+    await wait(400);
+    await typeInto($('#cmd2'), 'burn statusline');
+    await wait(320); $('#cur2').classList.remove('on');
+    $('#o2').classList.add('on'); $('#cur3').classList.add('on');
+  }
+
+  // ── feature cards: an ember spotlight follows the pointer
+  $$('.feat').forEach(c => c.addEventListener('pointermove', e => {
+    const r = c.getBoundingClientRect();
+    c.style.setProperty('--mx', (e.clientX - r.left) + 'px'); c.style.setProperty('--my', (e.clientY - r.top) + 'px');
+  }));
+
+  // ── copy buttons
+  $$('button[data-copy]').forEach(b => b.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(b.dataset.copy);
+      const label = b.lastElementChild, icon = b.firstElementChild, box = b.closest('.brew');
+      label.textContent = 'Copied'; icon.textContent = 'check'; b.classList.add('ok'); box.classList.add('flash');
+      setTimeout(() => { label.textContent = 'Copy'; icon.textContent = 'content_copy'; b.classList.remove('ok'); box.classList.remove('flash'); }, 1600);
+    } catch (e) {}
+  }));
+})();
+</script>
+</body>
+</html>
