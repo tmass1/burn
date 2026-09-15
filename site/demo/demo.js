@@ -154,39 +154,108 @@
     return h('div', { class: 'win term', id: 'term' },
       h('div', { class: 'bar' }, h('span', { class: 'dots' }, h('i'), h('i'), h('i')), h('span', { class: 'title' }, 'claude-personal — 100×32')),
       h('div', { class: 'body', id: 'transcript' }),
-      h('div', { class: 'status' }, h('span', { class: 'seg', id: 'statusline' }), h('span', {}, '· main · 2.1.269')));
+      h('div', { class: 'status' }, h('span', { class: 'seg', id: 'statusline' }), h('span', {}, '· main'), h('span', { class: 'tokens', id: 'tokens' })));
   }
-  const LINES = [
-    ['u', '> tidy the launcher install so a rename rewrites the shim in place'],
-    ['a', '● I\'ll read how shims are written today.'],
-    ['t', '  ⎿ Read Sources/Burn/Store/Launchers.swift (212 lines)'],
-    ['a', '● Update(Sources/Burn/Store/Launchers.swift)'],
-    ['t', '  ⎿ Updated with 14 additions and 6 removals'],
-    ['a', '● Bash(swift test 2>&1 | tail -2)'],
-    ['g', '  ⎿ Executed 35 tests, with 0 failures'],
-    ['a', '● Done. A renamed account now gets its shim rewritten, and the old one is removed.'],
-    ['u', '> and a test for the rename'],
-    ['a', '● Update(Tests/BurnTests/LaunchersTests.swift)'],
-    ['t', '  ⎿ Updated with 9 additions'],
-    ['a', '● Bash(swift test --filter LaunchersTests 2>&1 | tail -1)'],
-    ['g', '  ⎿ Executed 4 tests, with 0 failures'],
-    ['a', '● Added `testRenameRewritesTheShim`; passing.'],
-    ['u', '> commit'],
-    ['a', '● Bash(git commit -am "Launcher shims follow renames")'],
-    ['g', '  ⎿ [main 4c1e2d9] Launcher shims follow renames'],
+  // ── the Claude Code session: prompts typed, thinking that ticks tokens, streamed prose, tools with results ─────
+  const SPIN = ['✻', '✽', '✾', '✿', '❀', '❁', '✼'];
+  const VERBS = ['Thinking', 'Percolating', 'Simmering', 'Brewing', 'Cogitating', 'Mustering'];
+  const TASKS = [
+    [['user', 'tidy the launcher install so a rename rewrites the shim in place'],
+     ['think', 2600, 380],
+     ['say', 'I\'ll look at how shims are written today, then make a rename rewrite the shim rather than add a second one.'],
+     ['tool', 'Read', 'Sources/Burn/Store/Launchers.swift', 'Read 212 lines', 9800],
+     ['think', 1800, 420],
+     ['diff', 'Sources/Burn/Store/Launchers.swift', '14 additions and 6 removals', [
+       [41, ' ', 'static func install(_ account: AccountSnapshot) throws -> String {'],
+       [42, '-', '    let path = binDirectory.appendingPathComponent(slug(account.label))'],
+       [42, '+', '    let name = slug(account.label)'],
+       [43, '+', '    if let old = Preferences.shared.installedLaunchers[account.id], old != name { remove(old) }'],
+       [44, '+', '    let path = binDirectory.appendingPathComponent(name)'],
+     ]],
+     ['bash', 'swift test 2>&1 | tail -1', ['Executed 35 tests, with 0 failures (0 unexpected) in 0.014 seconds']],
+     ['say', 'Done. Renaming an account now rewrites its command in place — `claude-studio` becomes `claude-studio-co` and the old shim is gone.']],
+    [['user', 'add a test for the rename'],
+     ['think', 2100, 360],
+     ['tool', 'Read', 'Tests/BurnTests/LaunchersTests.swift', 'Read 48 lines', 3100],
+     ['diff', 'Tests/BurnTests/LaunchersTests.swift', '11 additions', [
+       [19, '+', 'func testRenameRewritesTheShim() throws {'],
+       [20, '+', '    try Launchers.install(studio)'],
+       [21, '+', '    try Launchers.install(renamed(studio, "Studio Co"))'],
+       [22, '+', '    XCTAssertFalse(FileManager.default.fileExists(atPath: bin("claude-studio")))'],
+       [23, '+', '    XCTAssertTrue(FileManager.default.fileExists(atPath: bin("claude-studio-co")))'],
+       [24, '+', '}'],
+     ]],
+     ['bash', 'swift test --filter LaunchersTests 2>&1 | tail -1', ['Executed 4 tests, with 0 failures (0 unexpected) in 0.003 seconds']],
+     ['say', 'Added `testRenameRewritesTheShim`; the suite passes.']],
+    [['user', 'commit'],
+     ['think', 1400, 300],
+     ['bash', 'git add -A && git commit -m "Launcher shims follow renames"', ['[main 4c1e2d9] Launcher shims follow renames', ' 2 files changed, 25 insertions(+), 6 deletions(-)']],
+     ['say', 'Committed as 4c1e2d9.']],
   ];
+  const tokens = { up: 41_200, down: 3_800 };
+  const fmtTokens = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(Math.round(n));
   function transcript() {
-    const body = $('#transcript'); let i = 0;
-    const cursor = h('span', { class: 'cur' });
-    const step = () => {
-      const [cls, text] = LINES[i % LINES.length];
-      if (i % LINES.length === 0 && i > 0) body.innerHTML = '';
-      cursor.remove();
-      body.append(h('div', { class: cls }, text), cursor);
-      i++;
-      setTimeout(step, cls === 'u' ? 5200 : 2200 + Math.random() * 2600);
+    const body = $('#transcript'), tally = $('#tokens');
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    const scroll = () => { body.scrollTop = body.scrollHeight; };
+    const bump = () => { tally.textContent = `↑ ${fmtTokens(tokens.up)} ↓ ${fmtTokens(tokens.down)}`; };
+    const line = (cls, text = '') => { const el = h('div', { class: cls }, text); body.append(el); scroll(); return el; };
+    const stream = async (el, text, prefix = '', cps = 70) => {
+      for (let i = 0; i < text.length;) {
+        const n = 1 + Math.floor(Math.random() * 5);
+        i += n; el.textContent = prefix + text.slice(0, i);
+        tokens.down += n / 4; bump(); scroll();
+        await wait(1000 / cps * n + (Math.random() < .08 ? 120 : 0));
+      }
     };
-    step();
+    const spin = async (ms, perTick, verb = VERBS[Math.floor(Math.random() * VERBS.length)]) => {
+      const el = line('s'); const t0 = performance.now(); let i = 0;
+      while (performance.now() - t0 < ms) {
+        el.textContent = `${SPIN[i++ % SPIN.length]} ${verb}… (${Math.floor((performance.now() - t0) / 1000)}s · ↑ ${fmtTokens(tokens.up)} tokens · esc to interrupt)`;
+        tokens.up += perTick * (0.6 + Math.random() * 0.8); bump();
+        await wait(90);
+      }
+      el.remove();
+    };
+    (async () => {
+      // pick up mid-session, so the window is never empty
+      line('u', '> what does the panel do when a vendor is down?');
+      line('a', '● It checks the status page every five minutes and puts a chip on the rows an incident affects, then backs off.');
+      bump();
+      for (let round = 0; ; round++) {
+        for (const task of TASKS) {
+          await wait(2200 + Math.random() * 1500);
+          for (const step of task) {
+            const [kind] = step;
+            if (kind === 'user') { const el = line('u', '> '); await stream(el, step[1], '> ', 34); tokens.up += 40; await wait(500); }
+            if (kind === 'think') await spin(step[1], step[2]);
+            if (kind === 'say') { const el = line('a', '● '); await stream(el, step[1], '● '); await wait(400); }
+            if (kind === 'tool') {
+              line('a', `● ${step[1]}(${step[2]})`);
+              await spin(900 + Math.random() * 700, 140, step[1] === 'Read' ? 'Reading' : 'Working');
+              tokens.up += step[4]; bump();
+              line('t', `  ⎿  ${step[3]}`); await wait(500);
+            }
+            if (kind === 'diff') {
+              line('a', `● Update(${step[1]})`);
+              await spin(700, 260, 'Editing');
+              line('t', `  ⎿  Updated ${step[1]} with ${step[2]}`);
+              for (const [n, sign, text] of step[3]) { line('d' + (sign === '+' ? ' add' : sign === '-' ? ' del' : ''), `      ${String(n).padStart(3)} ${sign} ${text}`); tokens.down += 12; bump(); await wait(140); }
+              await wait(500);
+            }
+            if (kind === 'bash') {
+              line('a', `● Bash(${step[1]})`);
+              await spin(1200 + Math.random() * 900, 90, 'Running');
+              for (const out of step[2]) { line(out.includes('0 failures') ? 'g' : 't', `  ⎿  ${out}`); await wait(260); }
+              tokens.up += 900; bump(); await wait(500);
+            }
+          }
+        }
+        // a new conversation keeps the window readable: the old one scrolls off, the tally carries on
+        await wait(3000);
+        if (body.childElementCount > 80) [...body.children].slice(0, body.childElementCount - 30).forEach(el => el.remove());
+      }
+    })();
   }
 
   function menubar() {
