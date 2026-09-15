@@ -151,117 +151,216 @@
     ui.stage.style.top = ((r.height - H * k) / 2) + 'px';
   }
 
-  // the desktop: a Claude Code session, which is where the burn comes from
+  // ── the desktop: a Terminal with two tabs — a Claude Code session, and a Codex one — where the burn comes from ─
   function scene() {
+    const tab = (id, label, on) => h('button', { type: 'button', class: 'ttab' + (on ? ' on' : ''), 'data-session': id }, label);
     return h('div', { class: 'win term', id: 'term' },
-      h('div', { class: 'bar' }, h('span', { class: 'dots' }, h('i'), h('i'), h('i')), h('span', { class: 'title' }, 'claude-personal — 100×32')),
-      h('div', { class: 'body', id: 'transcript' }),
-      h('div', { class: 'status' }, h('span', { class: 'seg', id: 'statusline' }), h('span', {}, '· main'), h('span', { class: 'tokens', id: 'tokens' })));
+      h('div', { class: 'bar' }, h('span', { class: 'dots' }, h('i'), h('i'), h('i')), h('span', { class: 'title', id: 'term-title' }, 'claude-personal — 100×32')),
+      h('div', { class: 'ttabs' }, tab('claude', 'claude-personal', true), tab('codex', 'codex')),
+      h('div', { class: 'session on', id: 'ses-claude' },
+        h('div', { class: 'body', id: 'transcript' }),
+        h('div', { class: 'inputbox' }, h('span', { class: 'prompt' }, '>'), h('span', { class: 'ph', id: 'input-ph' }, 'Try "add a test for the rename"'), h('span', { id: 'input' }), h('span', { class: 'cur', id: 'input-cur' })),
+        h('div', { class: 'foot' }, h('span', {}, '⏵⏵ accept edits on ', h('span', { class: 'dim' }, '(shift+tab to cycle)')), h('span', { class: 'right' }, h('span', { class: 'dim' }, 'claude-opus-5 · context '), h('span', { id: 'context' }, '24%'))),
+        h('div', { class: 'status' }, h('span', { class: 'seg', id: 'statusline' }), h('span', {}, '· main'), h('span', { class: 'tokens', id: 'tokens' }))),
+      h('div', { class: 'session', id: 'ses-codex' },
+        h('div', { class: 'body', id: 'codex' }),
+        h('div', { class: 'inputbox codex' }, h('span', { class: 'prompt' }, '›'), h('span', { class: 'ph', id: 'codex-ph' }, 'Ask Codex to do anything'), h('span', { id: 'codex-input' }), h('span', { class: 'cur', id: 'codex-cur' })),
+        h('div', { class: 'foot' }, h('span', { class: 'dim' }, '? for shortcuts'), h('span', { class: 'right dim' }, 'gpt-5.6-luna · ', h('span', { id: 'codex-context' }, '31%'), ' context left'))));
   }
-  // ── the Claude Code session: prompts typed, thinking that ticks tokens, streamed prose, tools with results ─────
+
+  // ── the Claude Code session: a prompt typed into the box, thinking that ticks tokens, prose that streams, tools that
+  // ask before they edit, and the context filling up until it compacts ─────────────────────────────────────────────
   const SPIN = ['✻', '✽', '✾', '✿', '❀', '❁', '✼'];
-  const VERBS = ['Thinking', 'Percolating', 'Simmering', 'Brewing', 'Cogitating', 'Mustering'];
+  const VERBS = ['Thinking', 'Percolating', 'Simmering', 'Brewing', 'Cogitating', 'Mustering', 'Pondering', 'Forging'];
   const TASKS = [
-    [['user', 'tidy the launcher install so a rename rewrites the shim in place'],
-     ['think', 2600, 380],
-     ['say', 'I\'ll look at how shims are written today, then make a rename rewrite the shim rather than add a second one.'],
-     ['tool', 'Read', 'Sources/Burn/Store/Launchers.swift', 'Read 212 lines', 9800],
-     ['think', 1800, 420],
-     ['diff', 'Sources/Burn/Store/Launchers.swift', '14 additions and 6 removals', [
-       [41, ' ', 'static func install(_ account: AccountSnapshot) throws -> String {'],
-       [42, '-', '    let path = binDirectory.appendingPathComponent(slug(account.label))'],
-       [42, '+', '    let name = slug(account.label)'],
-       [43, '+', '    if let old = Preferences.shared.installedLaunchers[account.id], old != name { remove(old) }'],
-       [44, '+', '    let path = binDirectory.appendingPathComponent(name)'],
-     ]],
-     ['bash', 'swift test 2>&1 | tail -1', ['Executed 35 tests, with 0 failures (0 unexpected) in 0.014 seconds']],
-     ['say', 'Done. Renaming an account now rewrites its command in place — `claude-studio` becomes `claude-studio-co` and the old shim is gone.']],
-    [['user', 'add a test for the rename'],
-     ['think', 2100, 360],
-     ['tool', 'Read', 'Tests/BurnTests/LaunchersTests.swift', 'Read 48 lines', 3100],
-     ['diff', 'Tests/BurnTests/LaunchersTests.swift', '11 additions', [
-       [19, '+', 'func testRenameRewritesTheShim() throws {'],
-       [20, '+', '    try Launchers.install(studio)'],
-       [21, '+', '    try Launchers.install(renamed(studio, "Studio Co"))'],
-       [22, '+', '    XCTAssertFalse(FileManager.default.fileExists(atPath: bin("claude-studio")))'],
-       [23, '+', '    XCTAssertTrue(FileManager.default.fileExists(atPath: bin("claude-studio-co")))'],
-       [24, '+', '}'],
-     ]],
-     ['bash', 'swift test --filter LaunchersTests 2>&1 | tail -1', ['Executed 4 tests, with 0 failures (0 unexpected) in 0.003 seconds']],
-     ['say', 'Added `testRenameRewritesTheShim`; the suite passes.']],
-    [['user', 'commit'],
-     ['think', 1400, 300],
-     ['bash', 'git add -A && git commit -m "Launcher shims follow renames"', ['[main 4c1e2d9] Launcher shims follow renames', ' 2 files changed, 25 insertions(+), 6 deletions(-)']],
-     ['say', 'Committed as 4c1e2d9.']],
+    { prompt: 'tidy the launcher install so a rename rewrites the shim in place', steps: [
+      ['think', 2400, 380, 'The shim is written once at install and never touched again, so a rename leaves the old command behind and adds a second one. The fix is to remember which command an account owns and remove it before writing the new slug.'],
+      ['say', "I'll look at how shims are written today, then make a rename **rewrite** the shim rather than add a second one."],
+      ['grep', 'installedLaunchers', 'Sources', 'Found 3 files (ctrl+o to expand)', 2600],
+      ['read', 'Sources/Burn/Store/Launchers.swift', 'Read 212 lines (ctrl+o to expand)', 9800],
+      ['think', 1600, 420, null],
+      ['edit', 'Sources/Burn/Store/Launchers.swift', '14 additions and 6 removals', [
+        [41, ' ', 'static func install(_ account: AccountSnapshot) throws -> String {'],
+        [42, '-', '    let path = binDirectory.appendingPathComponent(slug(account.label))'],
+        [42, '+', '    let name = slug(account.label)'],
+        [43, '+', '    if let old = Preferences.shared.installedLaunchers[account.id], old != name { remove(old) }'],
+        [44, '+', '    let path = binDirectory.appendingPathComponent(name)'],
+      ]],
+      ['bash', 'swift test 2>&1 | tail -1', ['Executed 35 tests, with 0 failures (0 unexpected) in 0.014 seconds']],
+      ['say', 'Done. Renaming an account now rewrites its command in place:\n- `claude-studio` becomes `claude-studio-co`; the old shim is removed\n- `installedLaunchers` follows the rename, so Settings shows the right name\n- all 35 tests pass'],
+    ] },
+    { prompt: 'add a test for the rename', steps: [
+      ['think', 1800, 360, null],
+      ['read', 'Tests/BurnTests/LaunchersTests.swift', 'Read 48 lines (ctrl+o to expand)', 3100],
+      ['edit', 'Tests/BurnTests/LaunchersTests.swift', '11 additions', [
+        [19, '+', 'func testRenameRewritesTheShim() throws {'],
+        [20, '+', '    try Launchers.install(studio)'],
+        [21, '+', '    try Launchers.install(renamed(studio, "Studio Co"))'],
+        [22, '+', '    XCTAssertFalse(FileManager.default.fileExists(atPath: bin("claude-studio")))'],
+        [23, '+', '    XCTAssertTrue(FileManager.default.fileExists(atPath: bin("claude-studio-co")))'],
+        [24, '+', '}'],
+      ]],
+      ['bash', 'swift test --filter LaunchersTests 2>&1 | tail -1', ['Executed 4 tests, with 0 failures (0 unexpected) in 0.003 seconds']],
+      ['say', 'Added `testRenameRewritesTheShim` — install, rename, and the old command is gone while the new one exists. Passing.'],
+    ] },
+    { prompt: 'commit', steps: [
+      ['think', 1200, 300, null],
+      ['bash', 'git add -A && git commit -m "Launcher shims follow renames"', ['[main 4c1e2d9] Launcher shims follow renames', ' 2 files changed, 25 insertions(+), 6 deletions(-)']],
+      ['say', 'Committed as **4c1e2d9**.'],
+    ] },
+    { prompt: 'why does the weekly bar tint amber at 60 rather than at the threshold?', steps: [
+      ['think', 2600, 400, 'Two different things: the bar colour is a fixed scale for reading at a glance, the threshold is the user\'s own line for notifications. Worth explaining, not changing.'],
+      ['grep', 'markWarning', 'Sources/Burn/UI', 'Found 2 files (ctrl+o to expand)', 1800],
+      ['read', 'Sources/Burn/UI/Gauges.swift', 'Read 143 lines (ctrl+o to expand)', 6400],
+      ['say', 'They\'re two different scales on purpose:\n- the **bar** turns amber at 60 % and red at 85 % — a fixed reading scale, so a glance means the same thing on every account\n- the **threshold** in Settings is only about when Burn *interrupts* you\nIf you\'d rather the bar follow your threshold, it\'s a one-line change in `Gauges.swift` — say the word.'],
+    ] },
   ];
   const tokens = { up: 41_200, down: 3_800 };
   const fmtTokens = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(Math.round(n));
+  const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  /** The little markdown Claude Code prints: bold, code spans, bullets. */
+  const md = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*(.+?)\*/g, '<i>$1</i>').replace(/^- /gm, '  • ');
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  let activeSession = 'claude';
+  function showSession(id) {
+    activeSession = id;
+    $$('.ttab').forEach(t => t.classList.toggle('on', t.dataset.session === id));
+    $$('.session').forEach(el => el.classList.toggle('on', el.id === 'ses-' + id));
+    $('#term-title').textContent = (id === 'claude' ? 'claude-personal' : 'codex') + ' — 100×32';
+  }
   function transcript() {
-    const body = $('#transcript'), tally = $('#tokens');
-    const wait = ms => new Promise(r => setTimeout(r, ms));
+    const body = $('#transcript'), tally = $('#tokens'), input = $('#input'), ph = $('#input-ph'), context = $('#context');
+    let ctx = 24, allowed = false;
     const scroll = () => { body.scrollTop = body.scrollHeight; };
-    const bump = () => { tally.textContent = `↑ ${fmtTokens(tokens.up)} ↓ ${fmtTokens(tokens.down)}`; };
-    const line = (cls, text = '') => { const el = h('div', { class: cls }, text); body.append(el); scroll(); return el; };
-    const stream = async (el, text, prefix = '', cps = 70) => {
+    const bump = () => { tally.textContent = `↑ ${fmtTokens(tokens.up)} ↓ ${fmtTokens(tokens.down)}`; context.textContent = Math.round(ctx) + '%'; };
+    const line = (cls, html = '') => { const el = h('div', { class: cls, html }); body.append(el); scroll(); return el; };
+    const stream = async (el, text, prefix = '', cps = 75, render = md) => {
       for (let i = 0; i < text.length;) {
         const n = 1 + Math.floor(Math.random() * 5);
-        i += n; el.textContent = prefix + text.slice(0, i);
-        tokens.down += n / 4; bump(); scroll();
-        await wait(1000 / cps * n + (Math.random() < .08 ? 120 : 0));
+        i += n; el.innerHTML = render(prefix + text.slice(0, i));
+        tokens.down += n / 4; ctx += n / 4000; bump(); scroll();
+        await wait(1000 / cps * n + (Math.random() < .08 ? 140 : 0));
       }
     };
     const spin = async (ms, perTick, verb = VERBS[Math.floor(Math.random() * VERBS.length)]) => {
       const el = line('s'); const t0 = performance.now(); let i = 0;
       while (performance.now() - t0 < ms) {
         el.textContent = `${SPIN[i++ % SPIN.length]} ${verb}… (${Math.floor((performance.now() - t0) / 1000)}s · ↑ ${fmtTokens(tokens.up)} tokens · esc to interrupt)`;
-        tokens.up += perTick * (0.6 + Math.random() * 0.8); bump();
+        const burn = perTick * (0.6 + Math.random() * 0.8); tokens.up += burn; ctx += burn / 2200; bump();
         await wait(90);
       }
       el.remove();
     };
+    const type = async (text) => {
+      ph.hidden = true;
+      for (let i = 1; i <= text.length; i++) { input.textContent = text.slice(0, i); await wait(28 + Math.random() * 40); }
+      await wait(500); input.textContent = ''; ph.hidden = false;
+      line('u', '> ' + esc(text)); tokens.up += 40; bump();
+    };
+    const permission = async (file, diff) => {
+      const box = h('div', { class: 'perm' },
+        h('div', { class: 'ptitle' }, 'Edit file'), h('div', { class: 'pfile' }, file),
+        h('div', { class: 'pdiff' }, ...diff.slice(0, 4).map(([n, sign, text]) => h('div', { class: 'd' + (sign === '+' ? ' add' : sign === '-' ? ' del' : '') }, `${String(n).padStart(3)} ${sign} ${text}`))),
+        h('div', { class: 'pq' }, 'Do you want to make this edit to ' + file.split('/').pop() + '?'),
+        h('div', { class: 'popt on' }, '❯ 1. Yes'), h('div', { class: 'popt' }, '  2. Yes, allow all edits during this session (shift+tab)'), h('div', { class: 'popt' }, '  3. No, and tell Claude what to do differently (esc)'));
+      body.append(box); scroll();
+      await wait(1500);
+      const opts = $$('.popt', box); opts[0].classList.remove('on'); opts[0].textContent = '  1. Yes'; opts[1].classList.add('on'); opts[1].textContent = '❯ 2. Yes, allow all edits during this session (shift+tab)';
+      await wait(650);
+      box.remove(); allowed = true;
+    };
+    const compact = async () => {
+      await spin(2600, 60, 'Compacting conversation');
+      body.innerHTML = '';
+      line('t', '✻ Conversation compacted (ctrl+o for history)');
+      line('a', '● Summary: the launcher shims now follow renames (installed, tested, committed as 4c1e2d9); we were looking at why the bar tints at a fixed 60 %.');
+      ctx = 18; bump();
+    };
     (async () => {
       // pick up mid-session — the prompt already asked, the model already thinking — so tokens burn from the first second
       line('u', '> what does the panel do when a vendor is down?');
-      line('a', '● It checks the status page every five minutes and puts a chip on the rows an incident affects, then backs off.');
+      line('a', md('● It checks the status page every five minutes and puts a chip on the rows an incident affects, then backs off.'));
       bump();
-      let first = true;
-      for (let round = 0; ; round++) {
+      let first = true, turn = 0;
+      for (;;) {
         for (const task of TASKS) {
-          if (!first) await wait(2200 + Math.random() * 1500);
-          for (const step of task) {
+          if (first) { line('u', '> ' + esc(task.prompt)); first = false; await wait(250); }
+          else {
+            await wait(1500 + Math.random() * 1500);
+            if (turn % 2 === 1) await codexTurn();
+            await wait(400);
+            await type(task.prompt);
+          }
+          for (const step of task.steps) {
             const [kind] = step;
-            if (kind === 'user') {
-              if (first) { line('u', '> ' + step[1]); first = false; await wait(250); }
-              else { const el = line('u', '> '); await stream(el, step[1], '> ', 34); tokens.up += 40; await wait(500); }
+            if (kind === 'think') {
+              await spin(step[1], step[2]);
+              if (step[3]) { const el = line('th'); await stream(el, step[3], '∴ ', 110, t => esc(t)); await wait(300); }
             }
-            if (kind === 'think') await spin(step[1], step[2]);
-            if (kind === 'say') { const el = line('a', '● '); await stream(el, step[1], '● '); await wait(400); }
-            if (kind === 'tool') {
-              line('a', `● ${step[1]}(${step[2]})`);
-              await spin(900 + Math.random() * 700, 140, step[1] === 'Read' ? 'Reading' : 'Working');
-              tokens.up += step[4]; bump();
-              line('t', `  ⎿  ${step[3]}`); await wait(500);
-            }
-            if (kind === 'diff') {
+            if (kind === 'say') { const el = line('a'); await stream(el, step[1], '● '); await wait(400); }
+            if (kind === 'grep') { line('a', `● Grep(pattern: "${step[1]}", path: "${step[2]}")`); await spin(700, 120, 'Searching'); tokens.up += step[4]; bump(); line('t', `  ⎿  ${step[3]}`); await wait(450); }
+            if (kind === 'read') { line('a', `● Read(${step[1]})`); await spin(900 + Math.random() * 600, 140, 'Reading'); tokens.up += step[3]; ctx += step[3] / 2000; bump(); line('t', `  ⎿  ${step[2]}`); await wait(450); }
+            if (kind === 'edit') {
+              if (!allowed) await permission(step[1], step[3]);
               line('a', `● Update(${step[1]})`);
-              await spin(700, 260, 'Editing');
+              await spin(600, 260, 'Editing');
               line('t', `  ⎿  Updated ${step[1]} with ${step[2]}`);
-              for (const [n, sign, text] of step[3]) { line('d' + (sign === '+' ? ' add' : sign === '-' ? ' del' : ''), `      ${String(n).padStart(3)} ${sign} ${text}`); tokens.down += 12; bump(); await wait(140); }
-              await wait(500);
+              for (const [n, sign, text] of step[3]) { line('d' + (sign === '+' ? ' add' : sign === '-' ? ' del' : ''), esc(`      ${String(n).padStart(3)} ${sign} ${text}`)); tokens.down += 12; bump(); await wait(140); }
+              await wait(450);
             }
             if (kind === 'bash') {
-              line('a', `● Bash(${step[1]})`);
-              await spin(1200 + Math.random() * 900, 90, 'Running');
-              for (const out of step[2]) { line(out.includes('0 failures') ? 'g' : 't', `  ⎿  ${out}`); await wait(260); }
-              tokens.up += 900; bump(); await wait(500);
+              line('a', `● Bash(${esc(step[1])})`);
+              await spin(1100 + Math.random() * 900, 90, 'Running');
+              for (const out of step[2]) { line(out.includes('0 failures') ? 'g' : 't', `  ⎿  ${esc(out)}`); await wait(260); }
+              tokens.up += 900; bump(); await wait(450);
             }
           }
+          turn++;
+          if (ctx >= 82) { await wait(1200); await compact(); }
         }
-        // a new conversation keeps the window readable: the old one scrolls off, the tally carries on
-        await wait(3000);
-        if (body.childElementCount > 80) [...body.children].slice(0, body.childElementCount - 30).forEach(el => el.remove());
+        await wait(2500);
+        if (body.childElementCount > 90) [...body.children].slice(0, body.childElementCount - 30).forEach(el => el.remove());
       }
     })();
+    codexPrime();
+  }
+
+  // ── the other tab: a Codex session on the ChatGPT account, visited between Claude turns ──────────────────────────
+  const CODEX = [
+    { prompt: 'make the retry test deterministic', steps: [['work', 2200, 300], ['say', "I'll pin the clock in the retry test so the backoff is exact."], ['cmd', 'npm test -- retry', ['✓ 48 passed (2.1s)']], ['say', 'Pinned `Date.now` with a fake timer; the test no longer depends on wall time.']] },
+    { prompt: 'and the flaky upload one', steps: [['work', 1800, 280], ['cmd', 'npm test -- upload', ['✓ 12 passed (0.8s)']], ['say', 'Same fix: the upload test waited on a real 500 ms timeout; it now advances the fake clock.']] },
+  ];
+  const codexTokens = { up: 18_400 };
+  let codexIndex = 0;
+  function codexPrime() {
+    const body = $('#codex');
+    body.append(h('div', { class: 'cbox' }, h('div', {}, '>_ OpenAI Codex (v0.94.0)'), h('div', { class: 'dim' }, 'model: gpt-5.6-luna · ~/Projects/api')));
+    body.append(h('div', { class: 'u' }, '› tighten the retry backoff to 200ms'), h('div', { class: 'c', html: md('• Adjusted `RETRY_BASE_MS` and the test that asserts it.') }));
+  }
+  async function codexTurn() {
+    showSession('codex');
+    const body = $('#codex'), input = $('#codex-input'), ph = $('#codex-ph'), context = $('#codex-context');
+    const scroll = () => { body.scrollTop = body.scrollHeight; };
+    const line = (cls, html = '') => { const el = h('div', { class: cls, html }); body.append(el); scroll(); return el; };
+    const task = CODEX[codexIndex++ % CODEX.length];
+    await wait(600);
+    ph.hidden = true;
+    for (let i = 1; i <= task.prompt.length; i++) { input.textContent = task.prompt.slice(0, i); await wait(30 + Math.random() * 35); }
+    await wait(400); input.textContent = ''; ph.hidden = false; line('u', '› ' + esc(task.prompt));
+    for (const step of task.steps) {
+      const [kind] = step;
+      if (kind === 'work') {
+        const el = line('s'); const t0 = performance.now(); let i = 0;
+        while (performance.now() - t0 < step[1]) { codexTokens.up += step[2] * (0.6 + Math.random() * 0.8); el.textContent = `${['◐', '◓', '◑', '◒'][i++ % 4]} working (${Math.floor((performance.now() - t0) / 1000)}s · ${fmtTokens(codexTokens.up)} tokens · esc to interrupt)`; context.textContent = Math.max(4, 31 - Math.round(codexTokens.up / 4000)) + '%'; await wait(100); }
+        el.remove();
+      }
+      if (kind === 'say') { const el = line('c'); for (let i = 0; i < step[1].length;) { const n = 1 + Math.floor(Math.random() * 5); i += n; el.innerHTML = md('• ' + step[1].slice(0, i)); scroll(); await wait(1000 / 75 * n); } await wait(350); }
+      if (kind === 'cmd') { line('c', `• ran: <code>${esc(step[1])}</code>`); await wait(900); for (const out of step[2]) { line('g', '  ' + esc(out)); await wait(250); } await wait(350); }
+    }
+    // ChatGPT's session moved while we watched
+    const cg = accounts.find(a => a.id === 'chatgpt'); if (cg) cg.windows[0].used = Math.min(100, cg.windows[0].used + 1.5);
+    await wait(1800);
+    showSession('claude');
   }
 
   function menubar() {
@@ -638,6 +737,7 @@
     ui.panel.addEventListener('mousedown', e => e.stopPropagation());
     $('#refresh').addEventListener('click', e => { const b = e.currentTarget; b.classList.add('spin'); setTimeout(() => b.classList.remove('spin'), 650); renderAll(); });
     $('#gear').addEventListener('click', () => openSettings(!ui.settings.classList.contains('on')));
+    $('.ttabs').addEventListener('click', e => { const t = e.target.closest('.ttab'); if (t) showSession(t.dataset.session); });
     ui.settings.addEventListener('click', e => { if (e.target.closest('[data-act="close-settings"]')) openSettings(false); });
     ui.launch.addEventListener('click', e => { if (e.target.closest('[data-act="close-launch"]')) ui.launch.classList.remove('on'); });
     ui.panel.addEventListener('click', e => {
