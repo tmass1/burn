@@ -347,35 +347,153 @@
       row('Menu bar shows', seg('menuText', [[false, 'Ring'], [true, 'Ring + percent']])),
       row('Hotkey', h('kbd', { style: 'font:600 12px var(--mono);background:rgba(255,255,255,.1);border-radius:5px;padding:2px 7px' }, '⌥ Space'), 'Record a different one in the app'),
       h('p', { class: 'note' }, 'The ring shows the fullest window across your accounts; pin more rings from the Accounts tab in the app.'));
-    const accountsPage = h('div', { class: 'page', id: 'page-accounts' }, h('div', { class: 'sec' }, 'Accounts'));
-    for (const a of accounts) {
-      const shown = h('button', { type: 'button', class: 'sw' + (settings.hidden.has(a.id) ? '' : ' on'), role: 'switch', id: 'shown-' + a.id });
-      shown.addEventListener('click', () => { settings.hidden.has(a.id) ? settings.hidden.delete(a.id) : settings.hidden.add(a.id); renderAll(); });
-      const install = a.vendor === 'claude' ? h('button', { type: 'button', class: 'ghost', id: 'install-' + a.id }) : null;
-      if (install) install.addEventListener('click', () => { settings.installed.add(a.id); toast(`Installed ~/.local/bin/claude-${a.id} — a two-line shim that runs Claude Code as ${a.label}.`); renderAll(); });
-      accountsPage.append(h('div', { class: 'acc-row' }, h('span', { class: 'tile ' + a.tile, html: GLYPH[a.tile] }), h('span', { class: 'nm2' }, a.label), h('span', { class: 'sub' }, a.plan),
-        h('span', { class: 'st' }, install, h('span', {}, 'Shown'), shown)));
-    }
-    accountsPage.append(h('div', { class: 'srow' }, h('span', { class: 'l' }, 'Add an account', h('small', {}, 'Claude, ChatGPT, Grok, Gemini, Cursor, Copilot')), h('button', { type: 'button', class: 'ghost', onclick: () => toast('Signing in opens the vendor\'s own login on your Mac — not something a web page can do.') }, 'Sign in…')),
-      h('p', { class: 'note' }, 'The ⋯ menu on a row in the app also renames an account, sets the real plan price, and installs its claude-<name> command.'));
-    const usage = h('div', { class: 'page', id: 'page-usage' },
-      h('div', { class: 'sec' }, 'Usage'),
-      h('div', { class: 'srow' }, h('span', { class: 'l' }, 'Personal', h('small', {}, 'Session 28 %/h · out 3:41 PM · 4.7× usual   Weekly 2.2 %/h · on pace'))),
-      h('div', { class: 'srow' }, h('span', { class: 'l' }, 'API-priced', h('small', {}, '$310 today · 4× typical   $412 · 7 d   $1,380 · 30 d   13.8× the plan'))),
-      h('p', { class: 'note' }, 'In the app this tab charts 90 days of your own history — every sample Burn took — under each account, with the pace of each window and what the last week and month would have cost at API list prices. The demo has no history to show, so it stops here.'));
+    const accountsPage = h('div', { class: 'page', id: 'page-accounts' });
+    accountsPage.append(...buildAccounts());
+    const usage = h('div', { class: 'page', id: 'page-usage' });
+    usage.append(...buildUsage());
     const tabs = h('span', { class: 'tabs' });
     for (const [id, icon, title] of [['general', 'tune', 'General'], ['appearance', 'palette', 'Appearance'], ['accounts', 'group', 'Accounts'], ['usage', 'insights', 'Usage']]) {
-      tabs.append(h('button', { type: 'button', class: id === 'general' ? 'on' : '', 'data-tab': id, html: `<i class="mi">${icon}</i>${title}` }));
+      tabs.append(h('button', { type: 'button', class: id === 'general' ? 'on' : '', 'data-tab': id, 'data-title': title, html: `<i class="mi">${icon}</i>${title}` }));
     }
     const el = h('div', { class: 'win settings', id: 'settings', role: 'dialog', 'aria-label': 'Burn Settings' },
-      h('div', { class: 'bar' }, h('span', { class: 'dots' }, h('button', { type: 'button', title: 'Close', 'data-act': 'close-settings' }), h('i'), h('i')), tabs),
+      h('div', { class: 'bar' }, h('span', { class: 'dots' }, h('button', { type: 'button', title: 'Close', 'data-act': 'close-settings' }), h('i'), h('i')), h('span', { class: 'wtitle', id: 'settings-title' }, 'General'), tabs),
       general, appearance, accountsPage, usage);
     tabs.addEventListener('click', e => {
       const b = e.target.closest('button[data-tab]'); if (!b) return;
       $$('button', tabs).forEach(x => x.classList.toggle('on', x === b));
       $$('.page', el).forEach(p => p.classList.toggle('on', p.id === 'page-' + b.dataset.tab));
+      $('#settings-title').textContent = b.dataset.title;
+      if (b.dataset.tab === 'usage') { usage.innerHTML = ''; usage.append(...buildUsage()); }
+      if (b.dataset.tab === 'accounts') { accountsPage.innerHTML = ''; accountsPage.append(...buildAccounts()); }
     });
     return el;
+  }
+
+  // ── Accounts: the app's list — status, identity and plan, the price, shown/hidden, and the ⋯ menu ──────────────
+  const price = a => Number((a.plan.match(/\$(\d+)\/mo/) || [])[1]) || 0;
+  function buildAccounts() {
+    const rows = accounts.map(a => {
+      const shown = h('button', { type: 'button', class: 'sw' + (settings.hidden.has(a.id) ? '' : ' on'), role: 'switch', id: 'shown-' + a.id });
+      shown.addEventListener('click', () => { settings.hidden.has(a.id) ? settings.hidden.delete(a.id) : settings.hidden.add(a.id); renderAll(); });
+      const more = h('button', { type: 'button', class: 'more', title: 'More', html: '<i class="mi">more_horiz</i>' });
+      more.addEventListener('click', e => { e.stopPropagation(); rowMenu(a, more); });
+      return h('div', { class: 'acc-row' },
+        h('span', { class: 'tile ' + a.tile, html: GLYPH[a.tile] }),
+        h('span', { class: 'who' },
+          h('span', { class: 'nm2' }, a.label, h('span', { class: 'live' }, h('i'), 'Live')),
+          h('span', { class: 'sub' }, `${a.identity} · ${a.plan.replace(/ · \$\d+\/mo/, '')}`)),
+        h('span', { class: 'st' }, h('span', { class: 'price' }, `≈ $${price(a)}/mo`), shown, more));
+    });
+    const add = h('button', { type: 'button', class: 'ghost add', html: 'Add Account… <i class="mi">expand_more</i>' });
+    add.addEventListener('click', e => { e.stopPropagation(); menu(add, ['Claude', 'Gemini', 'Grok', 'ChatGPT (Codex)', 'Cursor', 'Copilot'].map(v => [v, () => toast(`${v}: signing in opens the vendor's own login on your Mac — not something a web page can do.`)])); });
+    const paid = accounts.filter(a => price(a) > 0);
+    return [...rows, h('div', { class: 'addrow' }, add),
+      h('p', { class: 'note' }, 'Claude, Gemini and Grok accounts sign in right here, in your browser — no other sign-in needed. ChatGPT, Cursor and Copilot are picked up from their own apps and CLIs.'),
+      h('p', { class: 'note' }, `About $${paid.reduce((n, a) => n + price(a), 0)}/mo across ${paid.length} paid plans — list prices guessed from plan names; set the real figure from an account's ⋯ menu.`)];
+  }
+  function rowMenu(a, at) {
+    const items = [];
+    if (a.vendor === 'claude') {
+      items.push([settings.installed.has(a.id) ? `claude-${a.id} is installed` : `Install claude-${a.id} command`, () => { settings.installed.add(a.id); toast(`Installed ~/.local/bin/claude-${a.id} — a two-line shim that runs Claude Code as ${a.label}.`); renderAll(); }]);
+      items.push(['Open Terminal with this account', () => { openSettings(false); launch(a); }]);
+    } else items.push([`Open ${a.app}`, () => toast(`On your Mac this opens ${a.app} — a web page can't.`)]);
+    items.push(['Rename…', () => toast('Renaming is a text field in the app; the demo keeps the names.')]);
+    items.push(['Set monthly price…', () => toast('The app takes the real figure here and uses it for "× the plan".')]);
+    items.push([settings.hidden.has(a.id) ? 'Show' : 'Hide', () => { settings.hidden.has(a.id) ? settings.hidden.delete(a.id) : settings.hidden.add(a.id); renderAll(); }]);
+    items.push(['Remove…', () => toast(`Removing forgets ${a.label} until you sign in again — the demo keeps it.`)]);
+    menu(at, items);
+  }
+  /** A macOS-style popup under `at`. */
+  function menu(at, items) {
+    $('#menu')?.remove();
+    const m = h('div', { class: 'menu', id: 'menu' });
+    for (const [label, act] of items) m.append(h('button', { type: 'button', onclick: () => { m.remove(); act(); } }, label));
+    ui.stage.append(m);
+    const k = Number(ui.stage.style.getPropertyValue('--k')) || 1;
+    const sr = ui.stage.getBoundingClientRect(), r = at.getBoundingClientRect();
+    m.style.left = clamp((r.right - sr.left) / k - m.offsetWidth, 8, W - m.offsetWidth - 8) + 'px';
+    m.style.top = ((r.bottom - sr.top) / k + 4) + 'px';
+    const close = e => { if (!m.contains(e.target)) { m.remove(); removeEventListener('mousedown', close, true); } };
+    setTimeout(() => addEventListener('mousedown', close, true));
+  }
+
+  // ── Usage: the app's charts — a range, then a card per account with its history, pace and API-priced spend ──────
+  const RANGES = [['24 hours', DAY], ['7 days', 7 * DAY], ['30 days', 30 * DAY], ['90 days', 90 * DAY]];
+  let range = 7 * DAY;
+  /** `span` in seconds, `now` in ms, like the rest of the clock. */
+  function history(a, span, now) {
+    // What the app would have sampled: session use in working hours only (a sawtooth per five-hour window,
+    // scaled by the hour of day), the long window climbing through its period and dropping at each reset.
+    const s = a.windows.find(w => w.kind === 'session'), long = a.windows.find(w => w.kind !== 'session' && w.kind !== 'model');
+    const ms = span * 1000, n = span <= DAY ? 240 : 320, out = [];
+    const seed = a.label.length * 7919;
+    for (let i = 0; i <= n; i++) {
+      const t = now - ms + ms * i / n;
+      const d = new Date(t), hour = d.getHours() + d.getMinutes() / 60, day = d.getDay();
+      const busy = (day === 0 || day === 6) ? 0.15 : hour < 8 || hour > 19 ? 0.05 : 0.6 + 0.4 * Math.sin((hour - 8) / 11 * Math.PI);
+      const wobble = 0.7 + 0.3 * Math.abs(Math.sin((t / 3.7e6) + seed));
+      let session = null;
+      if (s) {
+        const inWin = ((t / 1000 + seed) % s.length) / s.length;
+        const peak = Math.min(100, (a.typical || 6) * 5 * 1.6 * wobble * (busy + 0.2));
+        session = Math.min(100, inWin * peak);
+        if (t > now - 60 * 60 * 1000 && a.id === 'personal') session = Math.min(100, s.used - (now - t) / 3.6e6 * s.rate);
+      }
+      let weekly = null;
+      if (long) {
+        const inWeek = ((t / 1000 - long.resetAt.getTime() / 1000) % long.length + long.length) % long.length / long.length;
+        weekly = Math.min(100, long.used * 0.35 + inWeek * long.used * 0.9);
+      }
+      out.push({ t, session, weekly });
+    }
+    return out;
+  }
+  function chart(a, span, now) {
+    const pts = history(a, span, now), ms = span * 1000;
+    const Wc = 400, Hc = 64;
+    const x = t => ((t - (now - ms)) / ms * Wc).toFixed(1), y = v => (Hc - v / 100 * (Hc - 4)).toFixed(1);
+    const line = key => pts.filter(p => p[key] != null).map((p, i) => (i ? 'L' : 'M') + x(p.t) + ' ' + y(p[key])).join(' ');
+    // gridlines and labels for the range
+    const ticks = [];
+    const step = span === DAY ? 6 * HOUR : span === 7 * DAY ? DAY : span === 30 * DAY ? 7 * DAY : 30 * DAY;
+    const first = span === DAY ? Math.ceil((now - ms) / (step * 1000)) * step * 1000 : (() => { const d = new Date(now - ms); d.setHours(0, 0, 0, 0); return d.getTime() + step * 1000; })();
+    for (let t = first; t <= now; t += step * 1000) {
+      const d = new Date(t);
+      const label = span === DAY ? d.toLocaleTimeString('en-US', { hour: 'numeric' }) : span === 7 * DAY ? d.toLocaleDateString('en-US', { weekday: 'short' }) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      ticks.push({ x: x(t), label });
+    }
+    const peak = Math.max(...pts.map(p => p.session ?? p.weekly ?? 0));
+    return { svg: `<svg class="chart" viewBox="0 0 ${Wc} ${Hc + 14}" preserveAspectRatio="none">
+      ${ticks.map(t => `<line x1="${t.x}" x2="${t.x}" y1="0" y2="${Hc}" class="grid"/>`).join('')}
+      <line x1="0" x2="${Wc}" y1="${y(50)}" y2="${y(50)}" class="grid"/>
+      <line x1="0" x2="${Wc}" y1="${y(100)}" y2="${y(100)}" class="limit"/>
+      ${line('weekly') ? `<path d="${line('weekly')}" class="wk"/>` : ''}
+      ${line('session') ? `<path d="${line('session')}" class="ss"/>` : ''}
+      ${ticks.map(t => `<text x="${t.x}" y="${Hc + 12}" class="lbl" text-anchor="middle">${t.label}</text>`).join('')}
+    </svg>`, peak };
+  }
+  function buildUsage() {
+    const now = simNow.getTime();
+    const seg = h('span', { class: 'seg' });
+    for (const [label, span] of RANGES) {
+      const b = h('button', { type: 'button', class: span === range ? 'on' : '' }, label);
+      b.addEventListener('click', () => { range = span; const page = $('#page-usage'); page.innerHTML = ''; page.append(...buildUsage()); });
+      seg.append(b);
+    }
+    const cards = visible().map(a => {
+      const { svg, peak } = chart(a, range, now);
+      const parts = pooled(a).map(w => { const p = pace(w); const m = multipleOf(a, w);
+        return p.verdict === 'early' ? null : p.verdict === 'stalled' ? `${w.title} idle` : p.verdict === 'onPace' ? `${w.title} ${rateText(p.rate)} · on pace` : `${w.title} ${rateText(p.rate)} · out ${when(p.runOut)}` + (m && surging(a, w, p) ? ` · ${multipleText(m)} usual` : ''); }).filter(Boolean);
+      const spend = a.vendor === 'claude' ? (a.id === 'personal' ? 'API-priced $310 today · 4× typical   $412 · 7 d   $1,380 · 30 d   13.8× the plan' : 'API-priced $58 today   $290 · 7 d   $1,040 · 30 d   6.9× the plan') : null;
+      return h('div', { class: 'ucard' },
+        h('div', { class: 'uh' }, h('span', { class: 'tile ' + a.tile, html: GLYPH[a.tile] }), h('span', { class: 'nm2' }, a.label), h('span', { class: 'sub' }, a.plan.replace(/ · \$\d+\/mo/, '')), h('span', { class: 'peak' }, `peak ${Math.round(peak)}%`)),
+        h('div', { class: 'legend' }, h('span', { class: 'ss' }, 'Session'), h('span', { class: 'wk' }, a.windows.find(w => w.kind === 'weekly') ? 'Weekly' : a.windows[0].title)),
+        h('div', { class: 'chartbox', html: svg + `<span class="ax" style="top:0">100%</span><span class="ax" style="top:29px">50%</span><span class="ax" style="top:56px">0%</span>` }),
+        parts.length ? h('div', { class: 'uline' }, parts.join('   ')) : null,
+        spend ? h('div', { class: 'uline' }, spend) : null);
+    });
+    return [h('div', { class: 'srow show' }, h('span', { class: 'l' }, 'Show'), seg), ...cards,
+      h('p', { class: 'note' }, 'Every sample Burn took, for ninety days — dense for a week, hourly after. The API-priced lines read Claude Code\'s own logs at list prices.')];
   }
 
   function launcherWindow() {
@@ -595,5 +713,5 @@
   choose();
   addEventListener('resize', choose);
   // ?debug exposes the clock, so a script (or a curious person) can advance it: __burn.step(900) is fifteen minutes.
-  if (params.has('debug')) window.__burn = { step: s => { step(s); renderAll(); }, render: renderAll, accounts, settings };
+  if (params.has('debug')) window.__burn = { step: s => { step(s); renderAll(); }, render: renderAll, accounts, settings, history, chart };
 })();
