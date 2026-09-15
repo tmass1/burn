@@ -44,6 +44,8 @@ at login* (macOS registers it per app), and `burn://` replaces `headroom://` (st
 
 Download `Burn.dmg` from the [latest release](https://github.com/tmass1/burn/releases/latest), drag Burn to
 Applications, press ⌥Space — or `brew install --cask tmass1/tap/burn`. Signed with a Developer ID and notarized.
+Or try it first: [burn-1hx.pages.dev/demo](https://burn-1hx.pages.dev/demo/) is Burn running on a Mac desktop drawn
+in the page — the app's own pace, alert and tint rules over a clock at sixty times speed (`site/demo`).
 
 ## Build & install
 

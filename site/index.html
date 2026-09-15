@@ -185,6 +185,13 @@ h2{font:800 clamp(28px,3.4vw,38px)/1.1 "Plus Jakarta Sans",system-ui,sans-serif;
 .note.on b{color:var(--ink)}
 .note.on span{color:var(--ink2)}
 
+/* the web demo, framed */
+.demo-frame{position:relative;aspect-ratio:1280/800;border-radius:14px;overflow:hidden;background:#0d1226;box-shadow:0 40px 90px -30px rgba(0,0,0,.7),0 0 0 1px var(--line)}
+.demo-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.demo-note{margin:14px 0 0;font-size:14px;color:var(--mute)}
+.demo-note a{color:var(--ink);font-weight:600}
+@media (max-width:640px){.demo-frame{display:none}.demo-note{margin-top:0}}
+
 /* features */
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .feat{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 22px 20px;overflow:hidden;transition:transform .3s var(--spring),border-color .3s,box-shadow .3s}
@@ -268,6 +275,7 @@ footer a:hover{color:var(--ink)}
       </a>
       <div class="links" data-reveal style="--i:1">
         <a href="#pace">Pace</a>
+        <a href="#try">Try it</a>
         <a href="#features">Features</a>
         <a href="#install">Install</a>
         <a href="https://github.com/tmass1/burn">GitHub</a>
@@ -412,6 +420,16 @@ footer a:hover{color:var(--ink)}
         <div class="note"><span class="n">3</span><div><b>A yellow reset</b><span>The window won't last. Hover for the sentence; a notification says so once the window is half used, then stays quiet.</span></div></div>
       </div>
     </div>
+  </section>
+
+  <section class="section" id="try">
+    <p class="kicker" data-reveal>In your browser</p>
+    <h2 data-reveal style="--i:1">Try it without installing anything.</h2>
+    <p class="sub" data-reveal style="--i:2">A Mac desktop drawn in the page, with Burn running on it — the app's own pace, alert and tint rules over a clock at sixty times speed, so the afternoon goes by in a few minutes. Click the ring or press ⌥Space; hover a row, a reset time, the ring; open Settings.</p>
+    <div class="demo-frame" data-reveal style="--i:3">
+      <iframe src="demo/?embed" title="Burn web demo" loading="lazy" allow="clipboard-write"></iframe>
+    </div>
+    <p class="demo-note" data-reveal style="--i:4"><a href="demo/">Open the demo full-screen ↗</a> · Numbers are the app's review fixtures. What a page can't do — open your Terminal, sign you in — it says so.</p>
   </section>
 
   <section class="section" id="features">
