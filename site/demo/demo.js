@@ -130,6 +130,14 @@
     renderAll();
     requestAnimationFrame(loop);
     transcript();
+    // The ring is small and the panel is the point: once the desktop is on screen, point at the ring, then open it —
+    // unless the viewer has already found it.
+    new IntersectionObserver(([e], io) => { if (e.isIntersecting) { io.disconnect(); introduce(); } }, { threshold: .4 }).observe(stage);
+  }
+  let touched = false;
+  function introduce() {
+    setTimeout(() => { if (touched) return; ui.tray.classList.add('pulse'); ui.stage.classList.add('hinting'); }, 700);
+    setTimeout(() => { ui.tray.classList.remove('pulse'); if (!touched) openPanel(true); }, 2300);
   }
   function fit() {
     if (!ui.box) return;
@@ -190,7 +198,8 @@
         h('button', { class: 'tray', id: 'tray', type: 'button', 'aria-haspopup': 'true', 'aria-expanded': 'false', 'data-tip': 'tray',
           html: '<svg viewBox="0 0 16 16"><circle class="trk" cx="8" cy="8" r="6"/><circle class="arc" id="arc" cx="8" cy="8" r="6" stroke-dasharray="37.7" stroke-dashoffset="37.7"/></svg><span class="pctText" id="pctText"></span>' }),
         h('span', { class: 'mi' }, 'wifi'), h('span', { class: 'mi' }, 'battery_full'),
-        h('span', { class: 'clock', id: 'clock' })));
+        h('span', { class: 'clock', id: 'clock' })),
+      h('div', { class: 'hint', id: 'hint', html: 'Burn lives in the menu bar — <b>click the ring</b>, or press <kbd>⌥ Space</kbd>' }));
   }
 
   function sparkPath(a) {
@@ -406,15 +415,16 @@
 
   // ── interactions ──────────────────────────────────────────────────────────────────────────────────────────────
   function openPanel(open) {
+    if (open) { ui.stage.classList.remove('hinting'); ui.tray.classList.remove('pulse'); }
     ui.panel.classList.toggle('on', open);
     ui.tray.setAttribute('aria-expanded', String(open));
     ui.notifs.classList.toggle('aside', open);
   }
   function openSettings(open) { ui.settings.classList.toggle('on', open); }
   function wire() {
-    ui.tray.addEventListener('click', e => { e.stopPropagation(); openPanel(!ui.panel.classList.contains('on')); });
+    ui.tray.addEventListener('click', e => { e.stopPropagation(); touched = true; openPanel(!ui.panel.classList.contains('on')); });
     addEventListener('keydown', e => {
-      if (e.altKey && (e.code === 'Space')) { e.preventDefault(); openPanel(!ui.panel.classList.contains('on')); }
+      if (e.altKey && (e.code === 'Space')) { e.preventDefault(); touched = true; openPanel(!ui.panel.classList.contains('on')); }
       if (e.key === 'Escape') { if (ui.launch.classList.contains('on')) ui.launch.classList.remove('on'); else if (ui.settings.classList.contains('on')) openSettings(false); else openPanel(false); }
     });
     // the panel hides when you click elsewhere, like the app's
