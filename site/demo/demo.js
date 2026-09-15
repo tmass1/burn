@@ -50,7 +50,7 @@
   const win = (id, title, kind, length, used, rate, resetIn, extra = {}) => ({ id, title, kind, length, used, rate, resetIn, prev: used, ...extra });
   const accounts = [
     { id: 'personal', vendor: 'claude', tile: 'claude', label: 'Personal', plan: 'Max 5× · $100/mo', identity: 'you@example.com', typical: 6, app: 'Claude',
-      windows: [win('session', 'Session', 'session', 5 * HOUR, 60, 28, 129 * 60), win('weekly', 'Weekly', 'weekly', 7 * DAY, 63, 2.2, 1.3 * DAY)] },
+      windows: [win('session', 'Session', 'session', 5 * HOUR, 68, 28, 129 * 60), win('weekly', 'Weekly', 'weekly', 7 * DAY, 63, 2.2, 1.3 * DAY)] },
     { id: 'studio', vendor: 'claude', tile: 'claude', label: 'Studio', plan: 'Team · Max 5× · $150/mo', identity: 'you@studio.example', typical: 9, app: 'Claude',
       windows: [win('session', 'Session', 'session', 5 * HOUR, 31, 6, 133 * 60), win('weekly', 'Weekly', 'weekly', 7 * DAY, 44, 0.4, 4.6 * DAY), win('fable', 'Fable', 'model', 7 * DAY, 12, 0.2, 4.6 * DAY)] },
     { id: 'chatgpt', vendor: 'codex', tile: 'gpt', label: 'ChatGPT', plan: 'Plus · Codex quota · $20/mo', identity: 'you@example.com', typical: 8, app: 'ChatGPT', foot: '2 reset credits',
@@ -71,6 +71,8 @@
   // ── time: the viewer's clock, then sixty times faster ─────────────────────────────────────────────────────────
   const simStart = new Date();
   let simNow = new Date(simStart);
+  // Burn has been watching for twenty minutes when the demo starts, so the pace verdicts are in from the first frame.
+  const historyStart = new Date(simStart.getTime() - 20 * 60 * 1000);
   for (const a of accounts) for (const w of a.windows) { w.resetAt = new Date(simStart.getTime() + w.resetIn * 1000); w.periodStart = new Date(w.resetAt.getTime() - w.length * 1000); }
 
   const fmtClock = d => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
@@ -91,7 +93,7 @@
 
   // ── the pace maths, as in Pace.swift ──────────────────────────────────────────────────────────────────────────
   function pace(w, now = simNow) {
-    const sinceStart = (now - Math.max(w.periodStart, simStart)) / 1000;
+    const sinceStart = (now - Math.max(w.periodStart, historyStart)) / 1000;
     const expected = clamp((1 - (w.resetAt - now) / 1000 / w.length) * 100, 0, 100);
     if (sinceStart < 15 * 60) return { verdict: 'early', expected, rate: w.rate };
     if (w.rate <= 0.05) return { verdict: 'stalled', expected, rate: 0 };
@@ -136,8 +138,8 @@
   }
   let touched = false;
   function introduce() {
-    setTimeout(() => { if (touched) return; ui.tray.classList.add('pulse'); ui.stage.classList.add('hinting'); }, 700);
-    setTimeout(() => { ui.tray.classList.remove('pulse'); if (!touched) openPanel(true); }, 2300);
+    setTimeout(() => { if (touched) return; ui.tray.classList.add('pulse'); ui.stage.classList.add('hinting'); }, 350);
+    setTimeout(() => { ui.tray.classList.remove('pulse'); if (!touched) openPanel(true); }, 1200);
   }
   function fit() {
     if (!ui.box) return;
@@ -218,16 +220,20 @@
       el.remove();
     };
     (async () => {
-      // pick up mid-session, so the window is never empty
+      // pick up mid-session — the prompt already asked, the model already thinking — so tokens burn from the first second
       line('u', '> what does the panel do when a vendor is down?');
       line('a', '● It checks the status page every five minutes and puts a chip on the rows an incident affects, then backs off.');
       bump();
+      let first = true;
       for (let round = 0; ; round++) {
         for (const task of TASKS) {
-          await wait(2200 + Math.random() * 1500);
+          if (!first) await wait(2200 + Math.random() * 1500);
           for (const step of task) {
             const [kind] = step;
-            if (kind === 'user') { const el = line('u', '> '); await stream(el, step[1], '> ', 34); tokens.up += 40; await wait(500); }
+            if (kind === 'user') {
+              if (first) { line('u', '> ' + step[1]); first = false; await wait(250); }
+              else { const el = line('u', '> '); await stream(el, step[1], '> ', 34); tokens.up += 40; await wait(500); }
+            }
             if (kind === 'think') await spin(step[1], step[2]);
             if (kind === 'say') { const el = line('a', '● '); await stream(el, step[1], '● '); await wait(400); }
             if (kind === 'tool') {
@@ -451,8 +457,9 @@
 
   // ── the alert rules, as in Alerts.swift ───────────────────────────────────────────────────────────────────────
   const delivered = new Set();
+  let armed = false;
   function alerts() {
-    if (!settings.notify) return;
+    if (!settings.notify || !armed) return;
     const hr = simNow.getHours();
     if (settings.quiet && (hr >= 22 || hr < 7)) return;
     for (const a of visible()) for (const w of pooled(a)) {
@@ -465,13 +472,25 @@
         notify(a, `${a.label} ${w.title.toLowerCase()} is burning ${multipleText(multipleOf(a, w))} your usual`, `${rateText(w.rate)} now · ${rateText(a.typical)} is typical · resets ${whenIn(w.resetAt)}`, `${a.id}|${w.id}|surge|${period}`);
     }
   }
+  // Banners arrive one at a time, a beat apart, so a burst of verdicts reads as a sequence rather than a pile.
+  const queue = [];
+  let lastShown = 0;
   function notify(a, title, body, key) {
     if (delivered.has(key)) return; delivered.add(key);
+    queue.push({ title, body });
+    drain();
+  }
+  function drain() {
+    if (!queue.length) return;
+    const gap = 1400 - (performance.now() - lastShown);
+    if (gap > 0) { setTimeout(drain, gap); return; }
+    const { title, body } = queue.shift(); lastShown = performance.now();
     const el = h('div', { class: 'notif', role: 'status' }, h('img', { src: '../assets/burn-midnight.svg', alt: '' }),
       h('div', {}, h('b', {}, 'Burn'), h('span', { class: 'nt' }, title), h('span', { class: 'nb' }, body)), h('span', { class: 'when' }, 'now'));
     el.addEventListener('click', () => { dismiss(el); openPanel(true); });
     ui.notifs.append(el);
     setTimeout(() => dismiss(el), 7000);
+    if (queue.length) setTimeout(drain, 1400);
   }
   function dismiss(el) { if (!el.isConnected) return; el.classList.add('out'); setTimeout(() => el.remove(), 450); }
   let toastTimer;
@@ -484,7 +503,7 @@
 
   // ── interactions ──────────────────────────────────────────────────────────────────────────────────────────────
   function openPanel(open) {
-    if (open) { ui.stage.classList.remove('hinting'); ui.tray.classList.remove('pulse'); }
+    if (open) { ui.stage.classList.remove('hinting'); ui.tray.classList.remove('pulse'); if (!armed) { armed = true; lastShown = performance.now() - 1000; } }
     ui.panel.classList.toggle('on', open);
     ui.tray.setAttribute('aria-expanded', String(open));
     ui.notifs.classList.toggle('aside', open);
