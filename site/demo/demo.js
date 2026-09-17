@@ -156,16 +156,16 @@
     const tab = (id, label, on) => h('button', { type: 'button', class: 'ttab' + (on ? ' on' : ''), 'data-session': id }, label);
     return h('div', { class: 'win term', id: 'term' },
       h('div', { class: 'bar' }, h('span', { class: 'dots' }, h('i'), h('i'), h('i')), h('span', { class: 'title', id: 'term-title' }, 'claude-personal — 100×32')),
-      h('div', { class: 'ttabs' }, tab('claude', 'claude-personal', true), tab('codex', 'codex')),
+      h('div', { class: 'ttabs' }, tab('claude', 'claude-personal', true), ...OTHERS.map(o => tab(o.id, o.id))),
       h('div', { class: 'session on', id: 'ses-claude' },
         h('div', { class: 'body', id: 'transcript' }),
         h('div', { class: 'inputbox' }, h('span', { class: 'prompt' }, '>'), h('span', { class: 'ph', id: 'input-ph' }, 'Try "add a test for the rename"'), h('span', { id: 'input' }), h('span', { class: 'cur', id: 'input-cur' })),
         h('div', { class: 'foot' }, h('span', {}, '⏵⏵ accept edits on ', h('span', { class: 'dim' }, '(shift+tab to cycle)')), h('span', { class: 'right' }, h('span', { class: 'dim' }, 'claude-opus-5 · context '), h('span', { id: 'context' }, '24%'))),
         h('div', { class: 'status' }, h('span', { class: 'seg', id: 'statusline' }), h('span', {}, '· main'), h('span', { class: 'tokens', id: 'tokens' }))),
-      h('div', { class: 'session', id: 'ses-codex' },
-        h('div', { class: 'body', id: 'codex' }),
-        h('div', { class: 'inputbox codex' }, h('span', { class: 'prompt' }, '›'), h('span', { class: 'ph', id: 'codex-ph' }, 'Ask Codex to do anything'), h('span', { id: 'codex-input' }), h('span', { class: 'cur', id: 'codex-cur' })),
-        h('div', { class: 'foot' }, h('span', { class: 'dim' }, '? for shortcuts'), h('span', { class: 'right dim' }, 'gpt-5.6-luna · ', h('span', { id: 'codex-context' }, '31%'), ' context left'))));
+      ...OTHERS.map(o => h('div', { class: 'session', id: 'ses-' + o.id },
+        h('div', { class: 'body', id: 'body-' + o.id }),
+        h('div', { class: 'inputbox' }, h('span', { class: 'prompt' }, o.prompt), h('span', { class: 'ph', id: 'ph-' + o.id }, o.placeholder), h('span', { id: 'input-' + o.id }), h('span', { class: 'cur' })),
+        h('div', { class: 'foot' }, h('span', { class: 'dim' }, o.help), h('span', { class: 'right dim' }, o.model + ' · ', h('span', { id: 'context-' + o.id }, o.context + '%'), ' context left')))));
   }
 
   // ── the Claude Code session: a prompt typed into the box, thinking that ticks tokens, prose that streams, tools that
@@ -226,7 +226,7 @@
     activeSession = id;
     $$('.ttab').forEach(t => t.classList.toggle('on', t.dataset.session === id));
     $$('.session').forEach(el => el.classList.toggle('on', el.id === 'ses-' + id));
-    $('#term-title').textContent = (id === 'claude' ? 'claude-personal' : 'codex') + ' — 100×32';
+    $('#term-title').textContent = (id === 'claude' ? 'claude-personal' : id) + ' — 100×32';
   }
   function transcript() {
     const body = $('#transcript'), tally = $('#tokens'), input = $('#input'), ph = $('#input-ph'), context = $('#context');
@@ -287,7 +287,7 @@
           if (first) { line('u', '> ' + esc(task.prompt)); first = false; await wait(250); }
           else {
             await wait(1500 + Math.random() * 1500);
-            if (turn % 2 === 1) await codexTurn();
+            if (turn % 2 === 1) await otherTurn(OTHERS[(turn >> 1) % OTHERS.length]);
             await wait(400);
             await type(task.prompt);
           }
@@ -322,43 +322,63 @@
         if (body.childElementCount > 90) [...body.children].slice(0, body.childElementCount - 30).forEach(el => el.remove());
       }
     })();
-    codexPrime();
+    OTHERS.forEach(otherPrime);
   }
 
-  // ── the other tab: a Codex session on the ChatGPT account, visited between Claude turns ──────────────────────────
-  const CODEX = [
-    { prompt: 'make the retry test deterministic', steps: [['work', 2200, 300], ['say', "I'll pin the clock in the retry test so the backoff is exact."], ['cmd', 'npm test -- retry', ['✓ 48 passed (2.1s)']], ['say', 'Pinned `Date.now` with a fake timer; the test no longer depends on wall time.']] },
-    { prompt: 'and the flaky upload one', steps: [['work', 1800, 280], ['cmd', 'npm test -- upload', ['✓ 12 passed (0.8s)']], ['say', 'Same fix: the upload test waited on a real 500 ms timeout; it now advances the fake clock.']] },
+  // ── the other tabs: a Codex session on the ChatGPT account and a Grok one on the Grok account, each visited
+  // between Claude turns — the burn on those cards has a source too ─────────────────────────────────────────────────
+  const OTHERS = [
+    { id: 'codex', account: 'chatgpt', window: 0, nudge: 1.5, prompt: '›', placeholder: 'Ask Codex to do anything', help: '? for shortcuts',
+      model: 'gpt-5.6-luna', context: 31, spinner: ['◐', '◓', '◑', '◒'], verb: 'working', cls: 'c', bullet: '•', tokens: 18_400,
+      banner: ['>_ OpenAI Codex (v0.94.0)', 'model: gpt-5.6-luna · ~/Projects/api'],
+      prime: [['u', '› tighten the retry backoff to 200ms'], ['c', '• Adjusted `RETRY_BASE_MS` and the test that asserts it.']],
+      tasks: [
+        { prompt: 'make the retry test deterministic', steps: [['work', 2200, 300], ['say', "I'll pin the clock in the retry test so the backoff is exact."], ['cmd', 'npm test -- retry', ['✓ 48 passed (2.1s)']], ['say', 'Pinned `Date.now` with a fake timer; the test no longer depends on wall time.']] },
+        { prompt: 'and the flaky upload one', steps: [['work', 1800, 280], ['cmd', 'npm test -- upload', ['✓ 12 passed (0.8s)']], ['say', 'Same fix: the upload test waited on a real 500 ms timeout; it now advances the fake clock.']] },
+      ] },
+    { id: 'grok', account: 'grok', window: 0, nudge: 0.6, prompt: '❯', placeholder: 'Ask Grok anything…', help: '/help for commands',
+      model: 'grok-code-fast-1', context: 22, spinner: ['⚡', '·', '⚡', '·'], verb: 'thinking', cls: 'k', bullet: '▸', tokens: 9_200,
+      banner: ['⌁ Grok CLI (v1.3.2)', 'model: grok-code-fast-1 · ~/Projects/site'],
+      prime: [['u', '❯ why is the hero image blurry on retina?'], ['k', '▸ The hero is served at 1×; the `srcset` has no 2× candidate.']],
+      tasks: [
+        { prompt: 'add the 2× candidate and check the build', steps: [['work', 2000, 260], ['say', 'Adding `hero@2x.png` to the srcset and teaching the export script to write it.'], ['cmd', 'npm run build', ['✓ built in 1.9s · 42 assets']], ['say', 'Retina screens now get the 2× image; everything else keeps the 1×.']] },
+        { prompt: 'and lazy-load the gallery', steps: [['work', 1600, 240], ['cmd', 'npm run build', ['✓ built in 1.7s · 42 assets']], ['say', 'Gallery images below the fold now carry `loading="lazy"`; the first three stay eager.']] },
+      ] },
   ];
-  const codexTokens = { up: 18_400 };
-  let codexIndex = 0;
-  function codexPrime() {
-    const body = $('#codex');
-    body.append(h('div', { class: 'cbox' }, h('div', {}, '>_ OpenAI Codex (v0.94.0)'), h('div', { class: 'dim' }, 'model: gpt-5.6-luna · ~/Projects/api')));
-    body.append(h('div', { class: 'u' }, '› tighten the retry backoff to 200ms'), h('div', { class: 'c', html: md('• Adjusted `RETRY_BASE_MS` and the test that asserts it.') }));
+  const otherState = Object.fromEntries(OTHERS.map(o => [o.id, { tokens: o.tokens, index: 0 }]));
+  function otherPrime(o) {
+    const body = $('#body-' + o.id);
+    body.append(h('div', { class: 'cbox' }, h('div', {}, o.banner[0]), h('div', { class: 'dim' }, o.banner[1])));
+    for (const [cls, text] of o.prime) body.append(h('div', { class: cls, html: md(text) }));
   }
-  async function codexTurn() {
-    showSession('codex');
-    const body = $('#codex'), input = $('#codex-input'), ph = $('#codex-ph'), context = $('#codex-context');
+  async function otherTurn(o) {
+    showSession(o.id);
+    const st = otherState[o.id];
+    const body = $('#body-' + o.id), input = $('#input-' + o.id), ph = $('#ph-' + o.id), context = $('#context-' + o.id);
     const scroll = () => { body.scrollTop = body.scrollHeight; };
     const line = (cls, html = '') => { const el = h('div', { class: cls, html }); body.append(el); scroll(); return el; };
-    const task = CODEX[codexIndex++ % CODEX.length];
+    const task = o.tasks[st.index++ % o.tasks.length];
     await wait(600);
     ph.hidden = true;
     for (let i = 1; i <= task.prompt.length; i++) { input.textContent = task.prompt.slice(0, i); await wait(30 + Math.random() * 35); }
-    await wait(400); input.textContent = ''; ph.hidden = false; line('u', '› ' + esc(task.prompt));
+    await wait(400); input.textContent = ''; ph.hidden = false; line('u', esc(o.prompt + ' ' + task.prompt));
     for (const step of task.steps) {
       const [kind] = step;
       if (kind === 'work') {
         const el = line('s'); const t0 = performance.now(); let i = 0;
-        while (performance.now() - t0 < step[1]) { codexTokens.up += step[2] * (0.6 + Math.random() * 0.8); el.textContent = `${['◐', '◓', '◑', '◒'][i++ % 4]} working (${Math.floor((performance.now() - t0) / 1000)}s · ${fmtTokens(codexTokens.up)} tokens · esc to interrupt)`; context.textContent = Math.max(4, 31 - Math.round(codexTokens.up / 4000)) + '%'; await wait(100); }
+        while (performance.now() - t0 < step[1]) {
+          st.tokens += step[2] * (0.6 + Math.random() * 0.8);
+          el.textContent = `${o.spinner[i++ % o.spinner.length]} ${o.verb} (${Math.floor((performance.now() - t0) / 1000)}s · ${fmtTokens(st.tokens)} tokens · esc to interrupt)`;
+          context.textContent = Math.max(4, o.context - Math.round((st.tokens - o.tokens) / 4000)) + '%';
+          await wait(100);
+        }
         el.remove();
       }
-      if (kind === 'say') { const el = line('c'); for (let i = 0; i < step[1].length;) { const n = 1 + Math.floor(Math.random() * 5); i += n; el.innerHTML = md('• ' + step[1].slice(0, i)); scroll(); await wait(1000 / 75 * n); } await wait(350); }
-      if (kind === 'cmd') { line('c', `• ran: <code>${esc(step[1])}</code>`); await wait(900); for (const out of step[2]) { line('g', '  ' + esc(out)); await wait(250); } await wait(350); }
+      if (kind === 'say') { const el = line(o.cls); for (let i = 0; i < step[1].length;) { const n = 1 + Math.floor(Math.random() * 5); i += n; el.innerHTML = md(o.bullet + ' ' + step[1].slice(0, i)); scroll(); await wait(1000 / 75 * n); } await wait(350); }
+      if (kind === 'cmd') { line(o.cls, `${o.bullet} ran: <code>${esc(step[1])}</code>`); await wait(900); for (const out of step[2]) { line('g', '  ' + esc(out)); await wait(250); } await wait(350); }
     }
-    // ChatGPT's session moved while we watched
-    const cg = accounts.find(a => a.id === 'chatgpt'); if (cg) cg.windows[0].used = Math.min(100, cg.windows[0].used + 1.5);
+    // the account's window moved while we watched
+    const acct = accounts.find(a => a.id === o.account); if (acct) acct.windows[o.window].used = Math.min(100, acct.windows[o.window].used + o.nudge);
     await wait(1800);
     showSession('claude');
   }

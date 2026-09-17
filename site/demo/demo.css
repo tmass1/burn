@@ -93,6 +93,7 @@ html.embedded .stage-box{max-width:none;height:100vh;aspect-ratio:auto;border-ra
 .term .body .th{color:#7f8694;font-style:italic}
 .term .body .a b{color:#f3f4f6;font-weight:600}.term .body .a code,.term .body .c code{color:#ffb08a;background:rgba(255,255,255,.06);border-radius:3px;padding:0 3px}
 .term .body .c{color:#9ad0ff}
+.term .body .k{color:#e6e9ee}.term .body .k code{color:#c9ced6;background:rgba(255,255,255,.08)}
 .term .body .cbox{border:1px solid #3a4150;border-radius:6px;padding:5px 10px;margin:2px 0 8px;color:#e6e9ee;width:max-content}
 .term .body .perm{margin:6px 0;padding:8px 12px;border:1px solid #c9a0ff;border-radius:6px;background:rgba(201,160,255,.05)}
 .term .body .perm .ptitle{font-weight:600;color:#f3f4f6}.term .body .perm .pfile{color:#8b949e;margin-bottom:6px}
