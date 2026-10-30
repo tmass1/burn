@@ -48,7 +48,20 @@ chmod 755 "$APP/Contents/Resources/burn"
 for bundle in "$(dirname "$BIN")"/*.bundle; do
   [[ -d "$bundle" ]] && cp -R "$bundle" "$APP/Contents/Resources/"
 done
-codesign --force --deep --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP" 2>&1 | grep -v "replacing existing signature" || true
+# Sparkle, for in-app updates. Its XPC services are only for sandboxed apps, which Burn is not, so they stay behind.
+# Every piece is signed with Burn's identity from the inside out: notarization wants each Mach-O signed with the
+# hardened runtime, and library validation wants the framework signed by the same team as the app.
+SPARKLE=.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework
+[[ -d "$SPARKLE" ]] || { echo "Sparkle.framework missing — run swift package resolve"; exit 1; }
+mkdir -p "$APP/Contents/Frameworks"
+ditto "$SPARKLE" "$APP/Contents/Frameworks/Sparkle.framework"
+FW="$APP/Contents/Frameworks/Sparkle.framework"
+rm -rf "$FW/Versions/B/XPCServices" "$FW/XPCServices"
+sign() { codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$@" 2>&1 | grep -v "replacing existing signature" || true; }
+sign "$FW/Versions/B/Autoupdate"
+sign "$FW/Versions/B/Updater.app"
+sign "$FW"
+sign --deep "$APP"
 echo "built $APP"
 
 if [[ $INSTALL -eq 1 ]]; then

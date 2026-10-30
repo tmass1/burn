@@ -128,6 +128,9 @@ final class StatusItemController {
         }
         menu.addItem(.separator())
         menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",").target = self
+        let update = menu.addItem(withTitle: Updater.shared.available.map { "Update to Burn \($0)…" } ?? "Check for Updates…",
+                                  action: #selector(checkForUpdates), keyEquivalent: "")
+        update.target = self
         let login = menu.addItem(withTitle: "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
         login.target = self
         login.state = Preferences.shared.launchAtLogin ? .on : .off
@@ -142,6 +145,7 @@ final class StatusItemController {
         Preferences.shared.pinnedAccountIDs.removeAll { $0 == id }
     }
     @objc private func toggleLaunchAtLogin() { Preferences.shared.launchAtLogin.toggle() }
+    @objc private func checkForUpdates() { Updater.shared.checkForUpdates() }
     @objc private func openSettings() {
         panel.hide()
         NSApp.activate()

@@ -29,6 +29,8 @@ struct GeneralPane: View {
         (60, "1 minute"), (180, "3 minutes"), (300, "5 minutes"), (600, "10 minutes"),
     ]
 
+    @State private var updater = Updater.shared
+
     var body: some View {
         SettingsPage {
             SettingsSection("Shortcut") {
@@ -150,7 +152,27 @@ struct GeneralPane: View {
                 }
                 SettingsNote(toolMessage ?? "burn prints what the panel knows — one line per account, `status`, `json` — and `burn statusline` is a segment for Claude Code's status line, picking the account whose profile the session runs as.")
             }
+            SettingsSection("Updates") {
+                SettingsRow("Check for updates automatically") {
+                    Toggle("Check for updates automatically", isOn: Binding(get: { updater.checksAutomatically }, set: { updater.setChecksAutomatically($0) }))
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                        .controlSize(.small)
+                }
+                Hairline()
+                SettingsRow("Burn \(Updater.version) (\(Updater.build))") {
+                    ControlButton(updater.available.map { "Update to \($0)…" } ?? "Check Now") { updater.checkForUpdates() }
+                }
+                SettingsNote(updatesNote)
+            }
         }
+    }
+
+    private var updatesNote: String {
+        let last = updater.lastChecked.map { " Last checked \(Relative.ago($0, from: .now))." } ?? ""
+        return updater.checksAutomatically
+            ? "Burn looks for a new version shortly after it opens and once a day, and installs only updates signed with its own key.\(last)"
+            : "Burn won't look for new versions by itself; Check Now still does.\(last)"
     }
 }
 

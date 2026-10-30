@@ -119,6 +119,9 @@ final class PanelController {
         let window: NSWindow?
         if target == "settings" {
             window = SettingsOpener.window
+        } else if target == "front" {
+            // Whatever else Burn has in front — Software Update, an alert.
+            window = NSApp.orderedWindows.first { $0.isVisible && $0 !== panel && $0.frame.width > 200 }
         } else {
             if !panel.isVisible { show(anchor: .screenTop, key: false) }
             window = panel

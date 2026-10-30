@@ -1,6 +1,8 @@
 #!/bin/zsh
-# Cuts a release: universal build, Developer ID signature, notarization, a zip (for Homebrew) and a disk image (for
-# people) on a GitHub release, and the Homebrew cask bumped to match.
+# Cuts a release: universal build, Developer ID signature, notarization, a zip (for Homebrew and in-app updates), a disk
+# image (for people) and the Sparkle appcast on a GitHub release, and the Homebrew cask bumped to match.
+# Needs docs/releases/<version>.md (the notes people see in the update window) and Burn's update-signing key in the
+# login keychain (`generate_keys --account burn`, once per Mac that releases).
 #   scripts/release.sh                 → everything, for the version in Resources/Info.plist
 #   scripts/release.sh --skip-notarize → sign and package without notarizing (Gatekeeper will complain; for testing)
 #   scripts/release.sh --dry-run       → build, sign, notarize and package (build/Burn.zip, build/Burn.dmg), but no
@@ -22,6 +24,10 @@ VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" Resource
 TAG="v$VERSION"
 ZIP="build/Burn.zip"   # constant names, so releases/latest/download/Burn.zip and Burn.dmg always work
 DMG="build/Burn.dmg"
+APPCAST="build/appcast.xml"   # releases/latest/download/appcast.xml is the SUFeedURL every copy reads
+BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" Resources/Info.plist)
+NOTES_FILE="docs/releases/$VERSION.md"
+SPARKLE_BIN=.build/artifacts/sparkle/Sparkle/bin
 DEVELOPER_ID="${BURN_DEVELOPER_ID:-Developer ID Application: Thomas Massaro (Y5V8Y3BH9A)}"
 NOTARY_PROFILE="${BURN_NOTARY_PROFILE:-burn-notary}"
 TAP_REPO="${BURN_TAP_REPO:-tmass1/homebrew-tap}"
@@ -30,6 +36,17 @@ RELEASE_REPO="${BURN_RELEASE_REPO:-tmass1/burn}"
 echo "→ Burn $VERSION"
 if [[ $PUBLISH -eq 1 ]] && gh release view "$TAG" --repo "$RELEASE_REPO" >/dev/null 2>&1; then
   echo "release $TAG already exists — bump CFBundleShortVersionString first"; exit 1
+fi
+# Fail before the build if anything the end of the run needs is missing.
+[[ -f "$NOTES_FILE" ]] || { echo "no release notes — write $NOTES_FILE first (they show in the update window)"; exit 1; }
+[[ -x "$SPARKLE_BIN/sign_update" ]] || swift package resolve >/dev/null
+"$SPARKLE_BIN/generate_keys" --account burn -p >/dev/null 2>&1 \
+  || { echo "no update-signing key — run $SPARKLE_BIN/generate_keys --account burn"; exit 1; }
+# Sparkle compares build numbers: each release's CFBundleVersion must beat the one already published.
+PUBLISHED=$(curl -fsSL "https://github.com/$RELEASE_REPO/releases/latest/download/appcast.xml" 2>/dev/null \
+  | sed -n 's:.*<sparkle\:version>\([0-9.]*\)</sparkle\:version>.*:\1:p' | head -1 || true)
+if [[ -n "$PUBLISHED" ]] && ! [[ "$BUILD" -gt "$PUBLISHED" ]]; then
+  echo "CFBundleVersion $BUILD must be greater than the published build $PUBLISHED"; exit 1
 fi
 # Fail before the build if the notarization credential isn't there.
 if [[ $NOTARIZE -eq 1 ]] && ! xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
@@ -75,20 +92,23 @@ if [[ $NOTARIZE -eq 1 ]]; then
 fi
 echo "→ $DMG  $(du -h "$DMG" | cut -f1)"
 
+# 4. The appcast: the zip (the same stapled app the disk image holds) signed with Burn's update key, and the notes.
+SIGNED=$("$SPARKLE_BIN/sign_update" --account burn "$ZIP")
+ED_SIGNATURE=$(sed -n 's/.*sparkle:edSignature="\([^"]*\)".*/\1/p' <<< "$SIGNED")
+LENGTH=$(sed -n 's/.*length="\([0-9]*\)".*/\1/p' <<< "$SIGNED")
+[[ -n "$ED_SIGNATURE" && -n "$LENGTH" ]] || { echo "sign_update failed: $SIGNED"; exit 1; }
+python3 scripts/appcast.py --version "$VERSION" --build "$BUILD" \
+  --url "https://github.com/$RELEASE_REPO/releases/download/$TAG/Burn.zip" \
+  --signature "$ED_SIGNATURE" --length "$LENGTH" --notes "$NOTES_FILE" --out "$APPCAST"
+echo "→ $APPCAST  build $BUILD, signed"
+
 [[ $PUBLISH -eq 1 ]] || { echo "dry run — stopping before the GitHub release and the tap"; exit 0; }
 
-# 4. The GitHub release: the zip and the disk image, with docs/releases/<version>.md as the notes when there is one,
-# else the commit subjects since the previous tag.
-NOTES_FILE="docs/releases/$VERSION.md"
-if [[ -f "$NOTES_FILE" ]]; then
-  gh release create "$TAG" "$ZIP" "$DMG" --repo "$RELEASE_REPO" --title "Burn $VERSION" --notes-file "$NOTES_FILE"
-else
-  PREV=$(git describe --tags --abbrev=0 2>/dev/null || true)
-  NOTES=$(git log --pretty='- %s' ${PREV:+$PREV..}HEAD | grep -v "Co-Authored-By" | head -40)
-  gh release create "$TAG" "$ZIP" "$DMG" --repo "$RELEASE_REPO" --title "Burn $VERSION" --notes "$NOTES"
-fi
+# 5. The GitHub release: the zip, the disk image and the appcast, with the same notes the update window shows.
+gh release create "$TAG" "$ZIP" "$DMG" "$APPCAST" --repo "$RELEASE_REPO" --title "Burn $VERSION" --notes-file "$NOTES_FILE"
 
-# 5. The cask: version and checksum, in the tap (Homebrew takes the zip).
+# 6. The cask: version and checksum, in the tap (Homebrew takes the zip). Burn updates itself, so `auto_updates`
+# keeps `brew upgrade` from fighting it.
 TAP_DIR=$(mktemp -d)
 gh repo clone "$TAP_REPO" "$TAP_DIR" -- --quiet
 mkdir -p "$TAP_DIR/Casks"
@@ -102,6 +122,7 @@ cask "burn" do
   desc "Menu-bar meter for AI plan limits: Claude, ChatGPT, Grok, Gemini, Cursor and Copilot"
   homepage "https://github.com/$RELEASE_REPO"
 
+  auto_updates true
   depends_on macos: ">= :sonoma"
 
   app "Burn.app"

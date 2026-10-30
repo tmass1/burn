@@ -47,6 +47,21 @@ Applications, press ⌥Space — or `brew install --cask tmass1/tap/burn`. Signe
 Or try it first: [burn-1hx.pages.dev/demo](https://burn-1hx.pages.dev/demo/) is Burn running on a Mac desktop drawn
 in the page — the app's own pace, alert and tint rules over a clock at sixty times speed (`site/demo`).
 
+## Updates
+
+Burn updates itself with [Sparkle](https://sparkle-project.org). It reads the appcast attached to the latest GitHub
+release shortly after it opens and once a day, and offers a new version in a Software Update window: what's new, then
+Install and Relaunch, Remind Me Later or Skip This Version. **Check for Updates…** is in the menu-bar menu (and
+`burn://update`); Settings → General → Updates turns the daily look off. Started in the background at login, Burn
+doesn't put that window behind your work — it shows an **Update** pill in the panel's header and one banner instead.
+
+An update installs only if its archive is signed with Burn's EdDSA key (the public half is `SUPublicEDKey` in
+`Resources/Info.plist`; the private half lives in the login keychain of the Mac that releases) and the app inside
+carries the same Developer ID. A release writes `appcast.xml` from `docs/releases/<version>.md` and attaches it beside
+the zip and the disk image; `make release` stops before building if the notes or the key are missing, or if
+`CFBundleVersion` doesn't beat the published build. The cask is marked `auto_updates`, so `brew upgrade` leaves
+Burn to update itself.
+
 ## Build & install
 
 ```bash
@@ -58,7 +73,8 @@ make release        # the same, published: GitHub release + the Homebrew cask (s
 
 Requires Xcode (Swift 6). Signing uses the Apple Development identity in the login keychain (set
 `BURN_SIGN_IDENTITY` to override, or it falls back to ad-hoc). Packaging and releasing need the Developer ID
-certificate and, once, `xcrun notarytool store-credentials burn-notary --apple-id <id> --team-id Y5V8Y3BH9A`.
+certificate, the notarization credential (`xcrun notarytool store-credentials burn-notary …`, once) and Burn's
+update-signing key (`.build/artifacts/sparkle/Sparkle/bin/generate_keys --account burn`, once per Mac that releases).
 
 ## Sign-ins
 
@@ -147,7 +163,8 @@ when usage is unusually high for you: a window burning at 3× its typical busy h
 of samples), or a model — or a Claude account — doing 3× a typical day's API-priced work, from Claude Code's logs.
 The multiple is yours to set (2×, 3×, 5×); the card wears a "3× usual" chip and `burn` marks the window meanwhile.
 Design review helpers: `burn://alerts?test=1` (four sample notifications), `burn://demo` (fixture accounts in every state), `burn://live` (back to real data),
-`burn://appearance?mode=dark|light|system`, `burn://capture?path=/tmp/panel.png[&target=menubar|settings]`.
+`burn://appearance?mode=dark|light|system`, `burn://capture?path=/tmp/panel.png[&target=menubar|settings|front]`,
+`burn://update` (Check for Updates…).
 
 ## Where things live
 

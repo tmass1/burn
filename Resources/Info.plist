@@ -17,9 +17,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.0.0</string>
+	<string>2.1.0</string>
 	<key>CFBundleVersion</key>
-	<string>4</string>
+	<string>5</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>LSMinimumSystemVersion</key>
@@ -32,6 +32,14 @@
 	<false/>
 	<key>NSSupportsSuddenTermination</key>
 	<false/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/tmass1/burn/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>D4fmdfcNWSyl3VMrFtjCbS3TAfHiCtpT54p5q51Pi4s=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

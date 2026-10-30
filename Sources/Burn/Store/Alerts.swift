@@ -158,9 +158,18 @@ final class Alerts: NSObject, UNUserNotificationCenterDelegate {
         deliver(key: "sample-reset-\(stamp)", title: "Studio has room again", body: "Session reset · 3 % used", sound: false, account: nil)
         deliver(key: "sample-pace-\(stamp)", title: "Personal session runs out before it resets", body: "28 %/h at this pace · out in 26m · resets in 2h 10m", sound: false, account: nil)
         deliver(key: "sample-surge-\(stamp)", title: "Opus 5 on Personal: $310 of API work today", body: "4× a typical day ($75) · 27M tokens", sound: false, account: nil)
+        deliver(key: "sample-update-\(stamp)", title: "Burn 2.1.0 is available", body: "Click to see what's new and install it.", sound: false, account: nil, update: "2.1.0")
     }
 
-    private func deliver(key: String, title: String, body: String, sound: Bool, account: String?) {
+    /// A newer Burn that a scheduled check found while Burn had nothing in front — once per version per launch.
+    func deliverUpdate(version: String) {
+        let settings = Preferences.shared
+        guard settings.notificationsEnabled, !settings.isQuiet() else { return }
+        deliver(key: "update|\(version)", title: "Burn \(version) is available", body: "Click to see what's new and install it.",
+                sound: false, account: nil, update: version)
+    }
+
+    private func deliver(key: String, title: String, body: String, sound: Bool, account: String?, update: String? = nil) {
         guard delivered.insert(key).inserted else { return }
         let content = UNMutableNotificationContent()
         content.title = title
@@ -170,6 +179,7 @@ final class Alerts: NSObject, UNUserNotificationCenterDelegate {
             content.threadIdentifier = account
             content.userInfo = ["account": account]
         }
+        if let update { content.userInfo = ["update": update] }
         let request = UNNotificationRequest(identifier: key, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request) { error in
             if let error { Log.write("notification failed: \(error.localizedDescription)") }
@@ -188,8 +198,9 @@ final class Alerts: NSObject, UNUserNotificationCenterDelegate {
         [.banner, .sound]
     }
 
-    /// Clicking a banner is a request to look: open the panel.
+    /// Clicking a banner is a request to look: open the panel — or, for a new version, Software Update.
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        await MainActor.run { PanelActions.shared.show() }
+        let isUpdate = response.notification.request.content.userInfo["update"] != nil
+        await MainActor.run { isUpdate ? Updater.shared.checkForUpdates() : PanelActions.shared.show() }
     }
 }

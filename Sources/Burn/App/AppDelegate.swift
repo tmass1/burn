@@ -28,14 +28,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         Alerts.shared.start()
+        Updater.shared.start()
         VendorStatus.shared.start()
         APISpend.shared.start()
         store.start()
     }
 
-    /// `burn://toggle`, `burn://show`, `burn://hide`, `burn://refresh`, `burn://settings[?tab=accounts]`
+    /// `burn://toggle`, `burn://show`, `burn://hide`, `burn://refresh`, `burn://update`, `burn://settings[?tab=accounts]`
     /// — for Shortcuts and scripts.
-    /// `burn://capture?path=/tmp/panel.png` writes a PNG of the panel; `burn://demo` fills it with fixture
+    /// `burn://capture?path=/tmp/panel.png[&target=menubar|settings|front]` writes a PNG of the panel (or that window); `burn://demo` fills it with fixture
     /// accounts (every state at once) for design work; `burn://live` goes back to real data.
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
@@ -46,6 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             case "show": panel.show(anchor: .screenTop)
             case "hide": panel.hide()
             case "refresh": Task { await UsageStore.shared.refresh(force: true) }
+            case "update": panel.hide(); Updater.shared.checkForUpdates()
             case "demo": UsageStore.shared.loadDemo(calm: query.contains { $0.name == "calm" }); panel.show(anchor: .screenTop)
             case "live": UsageStore.shared.leaveDemo()
             case "settings":

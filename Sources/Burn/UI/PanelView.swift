@@ -75,6 +75,9 @@ struct PanelView: View {
                 Wordmark(height: 17, ink: p.title)
                     .padding(.leading, 2)
                 Spacer()
+                if let version = Updater.shared.available {
+                    UpdatePill(version: version)
+                }
                 HeaderButton(symbol: "arrow.clockwise",
                              help: store.lastRefresh.map { "Refresh now — updated \(Relative.ago($0, from: context.date))" } ?? "Refresh now",
                              spinning: store.isRefreshing) {
@@ -136,5 +139,33 @@ struct HeaderButton: View {
         .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.15), value: hovering)
         .help(help)
+    }
+}
+
+/// "Update" in the panel's header: a scheduled check found a newer Burn while nothing of Burn's was in front.
+struct UpdatePill: View {
+    var version: String
+    @State private var hovering = false
+
+    var body: some View {
+        Button {
+            PanelActions.shared.hide()
+            Updater.shared.checkForUpdates()
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                Text("Update")
+                    .font(.system(size: 11, weight: .bold))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 8)
+            .frame(height: 20)
+            .background(BurnMark.ember, in: Capsule())
+            .opacity(hovering ? 0.88 : 1)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .help("Burn \(version) is available — see what's new and install it")
     }
 }
