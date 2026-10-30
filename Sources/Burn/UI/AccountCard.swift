@@ -1,14 +1,13 @@
 import AppKit
 import SwiftUI
 
-/// One account, as a row in the list. The first line says who; each line under it is one window as a thin bar
-/// with its number and, like a Fritter due date, a clock and the time it resets. The bars of every account line up,
-/// so the panel reads as a table. Like a Fritter row the card tints when something is due: yellow when the tightest
-/// window is getting low, red when it is nearly out, and the name follows.
+/// One account, as a section of the forecast. The first line says who, and gives the verdict on the right: it lasts,
+/// it runs out in so long, it's idle. Each line under it is one window: solid to what is used now, hatched on to where
+/// the current pace lands by the reset, then both numbers and the reset. The columns of every account line up, so the
+/// panel reads as a table; hatching that reaches the end of its track means that window won't last.
 struct AccountCard: View {
     var snapshot: AccountSnapshot
-    var samples: [History.Sample]
-    /// Rate and run-out per pooled window id, from the store; empty for stale cards.
+    /// Rate and run-out per window id, from the store; empty for stale cards.
     var paces: [String: Pace] = [:]
 
     @Environment(\.colorScheme) private var scheme
@@ -31,17 +30,38 @@ struct AccountCard: View {
         }
         return out
     }
-    /// What the row as a whole says: the state of whichever pooled window is closest to its limit.
-    private var cardTone: Theme.Tone {
-        Theme.tone(forUsedPercent: snapshot.tightest?.usedPercent ?? 0, stale: snapshot.isStale || snapshot.tightest == nil)
+
+    /// The verdict, from the pooled windows — the ones the alerts and the menu bar go by.
+    private enum Outlook {
+        /// The soonest of them runs out before its reset.
+        case runsOut(UsageWindow, at: Date)
+        /// It lasts, but lands within a few points of the limit — inside the pace margin, too close to call it plenty.
+        case close(UsageWindow)
+        case lasts
+        /// Nothing used and nothing burning.
+        case idle
+        /// Too soon after launch or a reset to say.
+        case unknown
+    }
+
+    private var outlook: Outlook {
+        let pooled = snapshot.windows.filter(\.kind.isPooled)
+        let known = pooled.compactMap { w in paces[w.id].map { (window: w, pace: $0) } }
+        if let soonest = known.filter({ $0.pace.verdict == .fast && $0.pace.runOut != nil }).min(by: { $0.pace.runOut! < $1.pace.runOut! }) {
+            return .runsOut(soonest.window, at: soonest.pace.runOut!)
+        }
+        if let tight = known.first(where: { ($0.pace.forecast(for: $0.window) ?? 0) >= 95 }) { return .close(tight.window) }
+        if pooled.allSatisfy({ $0.usedPercent < 0.5 }), known.allSatisfy({ $0.pace.rate == 0 }) { return .idle }
+        if known.contains(where: { $0.pace.verdict == .onPace || $0.pace.verdict == .stalled }) { return .lasts }
+        return .unknown
     }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { context in
-            VStack(alignment: .leading, spacing: 8) {
-                header
+            VStack(alignment: .leading, spacing: 5) {
+                header(now: context.date)
                 if !bars.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 5) {
                         ForEach(bars) { barRow($0, now: context.date) }
                         if !notes.isEmpty {
                             Text(notes.joined(separator: " · "))
@@ -56,32 +76,29 @@ struct AccountCard: View {
                     problemLine(problem, standalone: bars.isEmpty)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.vertical, 9)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(cardTone.cardFill(p), in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+            .overlay(alignment: .top) { Rectangle().fill(p.divider).frame(height: 1) }
+            .contentShape(Rectangle())
             .onHover { hovering = $0 }
         }
     }
 
     // MARK: - Header
 
-    private var header: some View {
-        HStack(spacing: 8) {
-            ProviderTile(provider: snapshot.providerID, size: 22)
+    private func header(now: Date) -> some View {
+        HStack(spacing: 7) {
+            ProviderTile(provider: snapshot.providerID, size: 18)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(settings.label(for: snapshot))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(cardTone.titleColor(p))
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(p.ink)
                     .lineLimit(1)
                     .layoutPriority(1)
                 Text(notice ?? subtitleLine)
                     .font(.system(size: 11))
                     .foregroundStyle(p.muted)
                     .lineLimit(1)
-            }
-            if let condition = Optional(VendorStatus.shared.condition(for: snapshot.providerID)), condition.isTrouble {
-                VendorChip(provider: snapshot.providerID, condition: condition)
             }
             if let surge {
                 SurgeChip(text: surge.text, help: surge.help)
@@ -91,19 +108,39 @@ struct AccountCard: View {
                 ProblemFix(problem: problem)
             } else if snapshot.isStale {
                 StaleBadge(since: snapshot.fetchedAt)
-            } else if samples.count >= 3, let first = samples.first, Date.now.timeIntervalSince(first.t) >= 6 * 3600 {
-                // A 24-hour glyph needs a few hours of history before it has a shape; a blip at the edge just looks broken.
-                Sparkline(samples: samples)
-                    .frame(width: 64)
-                    .help("Session usage over the last 24 hours")
+            } else {
+                verdict(now: now)
             }
         }
+        .frame(minHeight: 18)
         .help(snapshot.identity ?? "")
         // The row's menu floats over the trailing edge on hover, so it costs the subtitle no room the rest of the time.
         .overlay(alignment: .trailing) {
             rowMenu
-                .background(cardTone.cardFill(p).opacity(0.9), in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
+                .background(p.ground.opacity(0.92), in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
                 .opacity(hovering ? 1 : 0)
+        }
+    }
+
+    @ViewBuilder
+    private func verdict(now: Date) -> some View {
+        switch outlook {
+        case let .runsOut(window, at):
+            VerdictLabel(symbol: "flame.fill", text: "out in \(Relative.countdown(to: at, from: now))", color: p.textCritical)
+                .help("At this pace the \(window.title.lowercased()) runs out \(Relative.clock(at))" + (window.resetsAt.map { ", before it resets \(Relative.clock($0))" } ?? ""))
+        case let .close(window):
+            VerdictLabel(symbol: "hourglass", text: "just lasts", color: p.textWarning)
+                .help("At this pace the \(window.title.lowercased()) reaches its limit right around the reset")
+        case .lasts:
+            VerdictLabel(symbol: "checkmark", text: "lasts", color: p.markFine)
+                .help("At this pace every window lasts until its reset")
+        case .idle:
+            Text("idle")
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundStyle(p.muted)
+                .help("Nothing used this period")
+        case .unknown:
+            EmptyView()
         }
     }
 
@@ -154,31 +191,40 @@ struct AccountCard: View {
     // MARK: - Bars
 
     private func barRow(_ w: UsageWindow, now: Date) -> some View {
-        let tone = Theme.tone(forUsedPercent: w.usedPercent, stale: snapshot.isStale)
         let pace = paces[w.id]
-        let fast = pace?.verdict == .fast
+        let forecast = snapshot.isStale ? nil : pace?.forecast(for: w, now: now)
         return HStack(spacing: 8) {
             FieldLabel(text: w.title)
-                .frame(width: 60, alignment: .leading)
+                .frame(width: 52, alignment: .leading)
                 .help(w.title)
-            MeterBar(usedPercent: w.usedPercent, tone: tone, height: 6, marker: pace?.expectedNow)
-            Text("\(Int(w.usedPercent.rounded()))%")
-                .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                .foregroundStyle(p.ink)
-                .frame(width: 34, alignment: .trailing)
-            HStack(spacing: 3) {
-                if w.resetsAt != nil {
-                    Image(systemName: "clock")
-                        .font(.system(size: 9, weight: .medium))
-                }
-                Text(resetText(w, now: now))
-                    .font(.system(size: 11).monospacedDigit())
-                    .lineLimit(1)
-            }
-            .foregroundStyle(fast ? p.textWarning : p.muted)
-            .frame(width: 96, alignment: .leading)
-            .help(paceHelp(w, pace: pace, now: now))
+            ForecastBar(usedPercent: w.usedPercent, forecast: forecast, stale: snapshot.isStale)
+            numbers(w, forecast: forecast)
+                .frame(width: 62, alignment: .trailing)
+            Text(resetText(w, now: now))
+                .font(.system(size: 11).monospacedDigit())
+                .foregroundStyle(p.muted)
+                .lineLimit(1)
+                .frame(width: 62, alignment: .trailing)
         }
+        .frame(height: 14)
+        .help(paceHelp(w, pace: pace, now: now))
+    }
+
+    /// "18 → 21": used now, then where it lands by the reset — "out" when it gets there first, a dash until there
+    /// is a pace to go on.
+    private func numbers(_ w: UsageWindow, forecast: Double?) -> some View {
+        let landing: Text = switch forecast {
+        case let f? where f > 100: Text("out").foregroundStyle(p.textCritical).fontWeight(.semibold)
+        case let f?: Text("\(Int(f.rounded()))").foregroundStyle(p.muted)
+        case nil: Text("–").foregroundStyle(p.muted.opacity(0.6))
+        }
+        return HStack(spacing: 3) {
+            Text("\(Int(w.usedPercent.rounded()))").foregroundStyle(p.ink.opacity(0.85))
+            Text("→").foregroundStyle(p.muted.opacity(0.55))
+            landing
+        }
+        .font(.system(size: 11, weight: .medium, design: .monospaced))
+        .lineLimit(1)
     }
 
     /// The reset time, and what the recent rate says about it.
@@ -222,13 +268,14 @@ struct AccountCard: View {
         return best.map { ("\(Baseline.multipleText($0.multiple)) usual", $0.help) }
     }
 
-    /// A countdown while it is today, a weekday and time within the week, a date beyond that.
+    /// A countdown while it is today, a weekday and hour within the week, a date beyond that — short enough to share
+    /// one column. The tooltip has the exact time.
     private func resetText(_ w: UsageWindow, now: Date) -> String {
-        guard let reset = w.resetsAt else { return "" }
+        guard let reset = w.resetsAt else { return "—" }
         if reset <= now { return "resetting" }
         let remaining = reset.timeIntervalSince(now)
         if remaining < 20 * 3600 { return Relative.countdown(to: reset, from: now) }
-        if remaining < 6 * 86400 { return Relative.clock(reset) }
+        if remaining < 6 * 86400 { return Relative.hour(reset) }
         return Relative.day(reset)
     }
 
@@ -236,15 +283,50 @@ struct AccountCard: View {
 
     /// Under the bars when the numbers are stale; the whole story when there are no numbers at all.
     private func problemLine(_ problem: AccountProblem, standalone: Bool) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Image(systemName: problem.kind == .throttled ? "hourglass" : "exclamationmark.circle")
-                .font(.system(size: 11))
-                .foregroundStyle(p.markWarning)
-            (Text(problem.title).foregroundStyle(p.ink) + Text(standalone ? " — " : ". ").foregroundStyle(p.muted) + Text(problem.hint).foregroundStyle(p.muted))
-                .font(.system(size: 11))
-                .lineLimit(standalone ? 3 : 2)
-                .fixedSize(horizontal: false, vertical: true)
+        (Text(problem.title).foregroundStyle(p.ink) + Text(standalone ? " — " : ". ").foregroundStyle(p.muted) + Text(problem.hint).foregroundStyle(p.muted))
+            .font(.system(size: 11.5))
+            .lineLimit(standalone ? 3 : 2)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// The verdict at the end of an account's first line: a glyph and a word or two in the colour of what it means.
+struct VerdictLabel: View {
+    var symbol: String
+    var text: String
+    var color: Color
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: symbol)
+                .font(.system(size: 10, weight: .bold))
+            Text(text)
+                .font(.system(size: 11.5, weight: .bold).monospacedDigit())
+                .lineLimit(1)
         }
+        .foregroundStyle(color)
+        .fixedSize()
+    }
+}
+
+/// A problem's one-step fix in the verdict's place, drawn like a verdict: a glyph and a word in the warning ink.
+struct VerdictButton: View {
+    var symbol: String
+    var title: String
+    var action: () -> Void
+
+    @Environment(\.colorScheme) private var scheme
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            VerdictLabel(symbol: symbol, text: title, color: Palette.resolve(scheme).textWarning)
+                .opacity(hovering ? 0.75 : 1)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.15), value: hovering)
     }
 }
 
@@ -279,16 +361,16 @@ struct ProblemFix: View {
                     CommandPill(command: target.command)
                 }
             } else {
-                ControlButton("Sign in…") { signIn.start(target) }
+                VerdictButton(symbol: "key.fill", title: "Sign in") { signIn.start(target) }
             }
         case let .openApp(bundleID, name):
-            ControlButton("Open \(name)") {
+            VerdictButton(symbol: "arrow.up.forward.app", title: "Open \(name)") {
                 if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
                     NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
                 }
             }
         case let .openLink(url, title):
-            ControlButton(title) {
+            VerdictButton(symbol: "arrow.up.right", title: title) {
                 if let url = URL(string: url) { NSWorkspace.shared.open(url) }
             }
         case nil:
@@ -361,34 +443,6 @@ struct ProviderTile: View {
                     .foregroundStyle(Theme.tileSymbolColor(provider, palette: p))
             )
             .accessibilityLabel(provider.displayName)
-    }
-}
-
-/// "Degraded" or "Outage", from the vendor's own status page; the incident is the tooltip, the page is a click away.
-struct VendorChip: View {
-    var provider: ProviderID
-    var condition: VendorCondition
-
-    @Environment(\.colorScheme) private var scheme
-
-    var body: some View {
-        let p = Palette.resolve(scheme)
-        let outage = { if case .outage = condition { true } else { false } }()
-        Button {
-            if let page = provider.statusPage?.page { NSWorkspace.shared.open(page) }
-        } label: {
-            HStack(spacing: 4) {
-                Circle().fill(outage ? p.markCritical : p.markWarning).frame(width: 5, height: 5)
-                Text(condition.title ?? "")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(outage ? p.textCritical : p.textWarning)
-            }
-            .padding(.horizontal, 7)
-            .frame(height: 18)
-            .background(outage ? p.cardCritical : p.cardWarning, in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .help("\(provider.vendorName): \(condition.incident ?? condition.title ?? "") — click for the status page")
     }
 }
 

@@ -11,6 +11,9 @@ final class History {
         var weekly: Double?
         /// Every pooled window by id, for plans whose pools are neither (a monthly one, say). Absent on old samples.
         var pools: [String: Double]?
+        /// Model caps by id, so a cap has a pace and a forecast of its own. Kept apart from `pools`, which decide
+        /// the long window. Absent on old samples.
+        var models: [String: Double]?
 
         /// The long window: weekly where there is one, else the fullest of the other pools.
         var long: Double? {
@@ -50,7 +53,9 @@ final class History {
             // One sample per minute is plenty; polls that come faster (panel opens) collapse into the latest.
             if let last = list.last, now.timeIntervalSince(last.t) < 55 { list.removeLast() }
             let pools = Dictionary(snapshot.windows.filter { $0.kind.isPooled }.map { ($0.id, $0.usedPercent) }, uniquingKeysWith: { a, _ in a })
-            list.append(Sample(t: now, session: snapshot.shortest?.usedPercent, weekly: snapshot.weekly?.usedPercent, pools: pools.isEmpty ? nil : pools))
+            let models = Dictionary(snapshot.windows.filter { $0.kind == .model }.map { ($0.id, $0.usedPercent) }, uniquingKeysWith: { a, _ in a })
+            list.append(Sample(t: now, session: snapshot.shortest?.usedPercent, weekly: snapshot.weekly?.usedPercent,
+                               pools: pools.isEmpty ? nil : pools, models: models.isEmpty ? nil : models))
             list.removeAll { now.timeIntervalSince($0.t) > Self.keepFor }
             samples[snapshot.id] = Self.compacted(list, now: now)
         }
@@ -90,7 +95,7 @@ final class History {
     /// to the session/weekly fields by kind.
     func points(for id: String, window: UsageWindow, last interval: TimeInterval) -> [(t: Date, used: Double)] {
         samples(for: id, last: interval).compactMap { sample in
-            let used: Double? = sample.pools?[window.id] ?? {
+            let used: Double? = sample.pools?[window.id] ?? sample.models?[window.id] ?? {
                 switch window.kind {
                 case .session, .daily: sample.session
                 case .weekly: sample.weekly

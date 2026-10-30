@@ -70,16 +70,17 @@ enum DemoData {
         ]
     }
 
-    /// A day of sawtooth session usage per demo account, so the sparklines have a story to tell.
+    /// A day of sawtooth session usage per demo account, and six hours of slow climb on the longer windows and model
+    /// caps, so every bar has a pace and a forecast to draw.
     @MainActor
     static func seedHistory(into history: History) {
         let now = Date.now
-        for (index, snapshot) in calm.enumerated() where snapshot.session != nil {
+        for (index, snapshot) in calm.enumerated() {
             var samples: [History.Sample] = []
             let period = 5.0 * 3600
             let phase = Double(index) * 4000
             var t = now.addingTimeInterval(-24 * 3600)
-            while t <= now {
+            while t <= now, snapshot.session != nil {
                 let age = t.timeIntervalSince1970 + phase
                 let inWindow = age.truncatingRemainder(dividingBy: period) / period
                 let peak = 40 + Double((index * 23) % 50)
@@ -101,6 +102,25 @@ enum DemoData {
                     let fraction = 1 - Double(minute) / 60
                     samples.append(History.Sample(t: now.addingTimeInterval(-Double(minute) * 60), session: used - 28 + 28 * fraction, weekly: nil))
                 }
+            }
+            // Points an hour: gentle on a week, gentler on a month, a trickle on a model cap.
+            let slow = snapshot.windows.filter { ($0.kind.isPooled && $0.kind != .session && $0.kind != .daily) || $0.kind == .model }
+            if !slow.isEmpty {
+                var t = now.addingTimeInterval(-6 * 3600)
+                while t <= now {
+                    // On the same five-minute grid as the session's samples: each one gains the slow windows.
+                    let session = samples.firstIndex { abs($0.t.timeIntervalSince(t)) < 150 }.flatMap { samples.remove(at: $0).session }
+                    let hoursAgo = now.timeIntervalSince(t) / 3600
+                    func climb(_ w: UsageWindow) -> Double {
+                        let rate = switch w.kind { case .monthly: 0.08; case .model: 0.1; default: 0.25 }
+                        return max(0, w.usedPercent - rate * hoursAgo)
+                    }
+                    let pools = Dictionary(slow.filter(\.kind.isPooled).map { ($0.id, climb($0)) }, uniquingKeysWith: { a, _ in a })
+                    let models = Dictionary(slow.filter { $0.kind == .model }.map { ($0.id, climb($0)) }, uniquingKeysWith: { a, _ in a })
+                    samples.append(History.Sample(t: t, session: session, weekly: pools["weekly"], pools: pools.isEmpty ? nil : pools, models: models.isEmpty ? nil : models))
+                    t = t.addingTimeInterval(5 * 60)
+                }
+                samples.sort { $0.t < $1.t }
             }
             history.replace(samples, for: snapshot.id)
         }

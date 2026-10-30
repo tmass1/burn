@@ -99,6 +99,20 @@ struct Pace: Sendable, Hashable, Codable {
         return min(100, elapsed / Double(length) * 100)
     }
 
+    /// Where the window lands by its reset if this rate holds — the hatched part of the panel's bar. Past 100 only
+    /// when it runs out first (`fast`); an on-pace landing a hair over is inside the margin, so it stops at 100. Nil
+    /// while there is nothing to go on yet, or no reset to land at.
+    func forecast(for window: UsageWindow, now: Date = .now) -> Double? {
+        switch verdict {
+        case .early: return nil
+        case .stalled: return window.usedPercent
+        case .onPace, .fast:
+            guard let reset = window.resetsAt, reset > now else { return nil }
+            let landing = window.usedPercent + rate * reset.timeIntervalSince(now) / 3600
+            return verdict == .fast ? landing : min(landing, 100)
+        }
+    }
+
     /// "2.6 %/h", "12 %/h".
     var rateText: String {
         rate < 10 ? String(format: "%.1f %%/h", rate) : "\(Int(rate.rounded())) %/h"

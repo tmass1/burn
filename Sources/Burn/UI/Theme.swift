@@ -1,9 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// Colors encode one thing: how close a window is to running out. The surfaces around them are Fritter's dark
-/// design (Figma "Tommy Samples → Fritter — Dark"), token for token: flat slate cards on a slate ground, rows that
-/// tint when something is due, `#293039` controls, 12 / 8 / 6 pt radii.
+/// Colors encode one thing: how close a window is to running out. The panel is frosted glass over the desktop; the
+/// controls and Settings keep Fritter's dark design (Figma "Tommy Samples → Fritter — Dark"): `#293039` controls,
+/// slate cards, 8 / 6 pt radii.
 enum Theme {
     /// Severity of a used-percentage. Thresholds are deliberate: 60 % is where a heavy session starts to bite,
     /// 85 % is "plan the switch now".
@@ -36,24 +36,6 @@ enum Theme {
             case .warning: p.markWarning
             case .critical: p.markCritical
             case .stale: p.muted.opacity(0.45)
-            }
-        }
-
-        /// A card tints like a Fritter row that is due: yellow when a window is getting low, red when nearly out.
-        func cardFill(_ p: Palette) -> Color {
-            switch self {
-            case .warning: p.cardWarning
-            case .critical: p.cardCritical
-            case .fine, .stale: p.card
-            }
-        }
-
-        /// The account name follows the tint, like the row text in Fritter.
-        func titleColor(_ p: Palette) -> Color {
-            switch self {
-            case .warning: p.textWarning
-            case .critical: p.textCritical
-            case .fine, .stale: p.ink
             }
         }
 
@@ -102,18 +84,23 @@ enum Theme {
         }
     }
 
-    // Shape, from the design: window 12, the well and its cards 8, controls 6.
-    static let panelRadius: CGFloat = 12
+    // Shape: the panel's glass 18, the well and its cards 8, controls 6.
+    static let panelRadius: CGFloat = 18
     static let wellRadius: CGFloat = 8
     static let cardRadius: CGFloat = 8
     static let controlRadius: CGFloat = 6
     static let panelInset: CGFloat = 8
 }
 
-/// Fritter's dark tokens, lifted from the design; the light set is derived from them with the same structure.
-/// Alphas matter on the ground and the well — a little of the desktop shows through the window.
+/// Fritter's dark tokens, lifted from the design, and the panel's glass; the light set is derived from them with the
+/// same structure. Alphas matter on the glass — the desktop shows through the panel, faintly.
 struct Palette {
-    var window: Color        // the panel ground over the window material
+    var glassTop: Color      // the panel's tint over the blurred desktop, at the top…
+    var glassBottom: Color   // …and at the bottom, a little denser
+    var sheen: Color         // the light down the glass's top third
+    var rimTop: Color        // the glass's edge where the light catches it…
+    var rim: Color           // …and everywhere else
+    var lane: Color          // the faint track a forecast bar runs in
     var well: Color          // the list card that holds the account cards
     var card: Color          // an account card
     var cardWarning: Color   // …when its tightest window is getting low
@@ -139,7 +126,8 @@ struct Palette {
     var divider: Color       // a hairline between rows in a card
 
     static let dark = Palette(
-        window: Color(hex: "#1b212ae6"), well: Color(hex: "#1b212af7"), card: Color(hex: "#222832f5"),
+        glassTop: Color(hex: "#1a1f279e"), glassBottom: Color(hex: "#13171db8"), sheen: Color(hex: "#ffffff0f"),
+        rimTop: Color(hex: "#ffffff29"), rim: Color(hex: "#ffffff17"), lane: Color(hex: "#ffffff0f"), well: Color(hex: "#1b212af7"), card: Color(hex: "#222832f5"),
         cardWarning: Color(hex: "#f2c97226"), cardCritical: Color(hex: "#dd2f2826"),
         ink: Color(hex: "#f3f3f3"), title: Color(hex: "#f5f5f5"), muted: Color(hex: "#a1a1a1"),
         textWarning: Color(hex: "#f1cc71"), textCritical: Color(hex: "#ffa49b"),
@@ -150,7 +138,8 @@ struct Palette {
         ground: Color(hex: "#1b212a"), page: Color(hex: "#1b212a"), divider: Color(hex: "#ffffff0f"))
 
     static let light = Palette(
-        window: Color(hex: "#ffffffeb"), well: Color(hex: "#eef0f3"), card: Color(hex: "#ffffff"),
+        glassTop: Color(hex: "#ffffffad"), glassBottom: Color(hex: "#f6f7f9c7"), sheen: Color(hex: "#ffffff66"),
+        rimTop: Color(hex: "#ffffffd9"), rim: Color(hex: "#0000001a"), lane: Color(hex: "#0000000f"), well: Color(hex: "#eef0f3"), card: Color(hex: "#ffffff"),
         cardWarning: Color(hex: "#f2c97238"), cardCritical: Color(hex: "#dd2f281f"),
         ink: Color(hex: "#1c1c1e"), title: Color(hex: "#111114"), muted: Color(hex: "#6b6f76"),
         textWarning: Color(hex: "#8a6100"), textCritical: Color(hex: "#b3261e"),
@@ -202,8 +191,8 @@ enum Appearance: String, CaseIterable, Sendable {
 
 // MARK: - Surfaces
 
-/// The window material under the ground: sidebar vibrancy, always active, so the 10 % the ground leaves open shows
-/// a blur of the desktop. Masked to the window's corners, because a layer mask alone does not clip behind-window blur.
+/// The window material under the glass's tint: behind-window vibrancy, always active, so what the tint leaves open
+/// shows a blur of the desktop. Masked to the window's corners, because a layer mask alone does not clip behind-window blur.
 struct WindowMaterial: NSViewRepresentable {
     var radius: CGFloat = Theme.panelRadius
 
@@ -224,6 +213,32 @@ struct WindowMaterial: NSViewRepresentable {
     }
 
     func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+}
+
+/// The panel's ground: frosted glass. The desktop blurred behind the window, the slate tinted over it at 62–72 % so
+/// the wallpaper and whatever window is behind come through faintly, and a soft sheen down the top third. With Reduce
+/// Transparency on, the material draws opaque by itself.
+struct PanelGlass: View {
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let p = Palette.resolve(scheme)
+        WindowMaterial()
+            .overlay(LinearGradient(colors: [p.glassTop, p.glassBottom], startPoint: .top, endPoint: .bottom))
+            .overlay(LinearGradient(stops: [.init(color: p.sheen, location: 0), .init(color: .clear, location: 0.32)], startPoint: .top, endPoint: .bottom))
+    }
+}
+
+/// The glass's edge: a hairline all round, brighter along the top where the light catches it.
+struct PanelRim: View {
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let p = Palette.resolve(scheme)
+        RoundedRectangle(cornerRadius: Theme.panelRadius, style: .continuous)
+            .strokeBorder(LinearGradient(stops: [.init(color: p.rimTop, location: 0), .init(color: p.rim, location: 0.06)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
+            .allowsHitTesting(false)
+    }
 }
 
 /// A control from the design: `#293039`, 6 pt corners, the faintest shadow; raised with the active-tab gradient
@@ -513,6 +528,15 @@ enum Relative {
         let sameDay = Calendar.current.isDateInToday(date)
         f.setLocalizedDateFormatFromTemplate(sameDay ? "jmm" : "EEE jmm")
         return f.string(from: date)
+    }
+
+    /// "Fri 8 AM" — the nearest hour, for a column too narrow for minutes. 7:59 reads as 8.
+    static func hour(_ date: Date) -> String {
+        let rounded = Date(timeIntervalSince1970: (date.timeIntervalSince1970 / 3600).rounded() * 3600)
+        let f = DateFormatter()
+        f.locale = .current
+        f.setLocalizedDateFormatFromTemplate(Calendar.current.isDateInToday(rounded) ? "j" : "EEE j")
+        return f.string(from: rounded)
     }
 
     /// "Sep 29" — for resets more than a few days out, when the weekday alone would be ambiguous.

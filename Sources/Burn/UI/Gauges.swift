@@ -38,68 +38,78 @@ struct RingGauge: View {
     }
 }
 
-/// Horizontal meter for the weekly window. 4 pt tall, rounded data end, in the recessed track.
-struct MeterBar: View {
+/// A window as two marks in one 8 pt lane: solid to what is used now, hatched on to where this pace lands by the
+/// reset. Hatching that would run past the end stops there behind a red cap — the window won't last. Colours follow
+/// the usual thresholds: the solid part by where it is, the hatching by where it lands.
+struct ForecastBar: View {
     var usedPercent: Double
-    var tone: Theme.Tone
-    var height: CGFloat = 4
-    /// Where the window would be if used evenly across its length — the pace marker. Nil draws nothing.
-    var marker: Double? = nil
+    /// From `Pace.forecast`; nil draws the solid part alone.
+    var forecast: Double?
+    var stale: Bool = false
+    var height: CGFloat = 8
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var animated: Double = 0
+    @State private var shownUsed: Double = 0
+    @State private var shownLanding: Double = 0
+
+    private var over: Bool { (forecast ?? 0) > 100 }
+    private var landing: Double { max(usedPercent, min(100, forecast ?? usedPercent)) }
 
     var body: some View {
         let p = Palette.resolve(scheme)
+        let usedTone = Theme.tone(forUsedPercent: usedPercent, stale: stale)
+        let landingTone = over ? Theme.Tone.critical : Theme.tone(forUsedPercent: landing, stale: stale)
         GeometryReader { geo in
+            let width = geo.size.width
             ZStack(alignment: .leading) {
-                Capsule().fill(p.track)
-                Capsule()
-                    .fill(tone.mark(p))
-                    .frame(width: max(height, geo.size.width * min(1, animated / 100)))
-                if let marker {
-                    // A notch in the fill where the bar has passed the marker; a tick on the track where it hasn't.
+                Rectangle().fill(p.lane)
+                Hatch(color: landingTone.mark(p))
+                    .opacity(0.8)
+                    .frame(width: max(0, width * (shownLanding - shownUsed) / 100))
+                    .offset(x: width * shownUsed / 100)
+                Rectangle()
+                    .fill(usedTone.mark(p))
+                    .frame(width: width * min(100, shownUsed) / 100)
+                if over {
                     Rectangle()
-                        .fill(marker <= animated ? p.page.opacity(0.9) : p.muted)
-                        .frame(width: 1.5, height: height + 4)
-                        .offset(x: geo.size.width * min(1, marker / 100) - 0.75)
+                        .fill(p.markCritical)
+                        .frame(width: 3)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
+            .clipShape(Capsule())
         }
         .frame(height: height)
-        .onAppear { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.6)) { animated = usedPercent } }
-        .onChange(of: usedPercent) { _, new in withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.45)) { animated = new } }
+        .onAppear {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.7)) { shownUsed = usedPercent; shownLanding = landing }
+        }
+        .onChange(of: usedPercent) { _, _ in withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.45)) { shownUsed = usedPercent; shownLanding = landing } }
+        .onChange(of: forecast) { _, _ in withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.45)) { shownLanding = landing } }
+        .accessibilityElement()
+        .accessibilityLabel("\(Int(usedPercent.rounded())) percent used" + (forecast.map { over ? ", runs out before the reset" : ", \(Int($0.rounded())) by the reset" } ?? ""))
     }
 }
 
-/// Last 24 hours of session utilization as a small muted glyph. Resets show up as the sawtooth drops.
-struct Sparkline: View {
-    var samples: [History.Sample]
-    var height: CGFloat = 16
-
-    @Environment(\.colorScheme) private var scheme
+/// Diagonal stripes, the forecast's mark: 2 pt lines every 4.5 pt, rising to the right.
+struct Hatch: View {
+    var color: Color
 
     var body: some View {
-        let p = Palette.resolve(scheme)
-        let points = samples.compactMap { s in s.session.map { (t: s.t, v: $0) } }
-        Chart {
-            ForEach(Array(points.enumerated()), id: \.offset) { _, point in
-                AreaMark(x: .value("Time", point.t), y: .value("Used", point.v))
-                    .foregroundStyle(.linearGradient(colors: [p.muted.opacity(0.22), .clear], startPoint: .top, endPoint: .bottom))
-                    .interpolationMethod(.monotone)
-                LineMark(x: .value("Time", point.t), y: .value("Used", point.v))
-                    .foregroundStyle(p.muted.opacity(0.85))
-                    .lineStyle(StrokeStyle(lineWidth: 1.25, lineCap: .round))
-                    .interpolationMethod(.monotone)
+        Canvas { context, size in
+            let step = 4.5 * 2.squareRoot(), thickness = 2 * 2.squareRoot(), h = size.height
+            var path = Path()
+            var x = -h
+            while x < size.width {
+                path.move(to: CGPoint(x: x, y: h))
+                path.addLine(to: CGPoint(x: x + thickness, y: h))
+                path.addLine(to: CGPoint(x: x + thickness + h, y: 0))
+                path.addLine(to: CGPoint(x: x + h, y: 0))
+                path.closeSubpath()
+                x += step
             }
+            context.fill(path, with: .color(color))
         }
-        .chartYScale(domain: 0...100)
-        .chartXScale(domain: Date.now.addingTimeInterval(-24 * 3600)...Date.now)
-        .chartXAxis(.hidden)
-        .chartYAxis(.hidden)
-        .chartLegend(.hidden)
-        .frame(height: height)
         .accessibilityHidden(true)
     }
 }

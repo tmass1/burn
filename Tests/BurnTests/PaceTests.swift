@@ -72,6 +72,37 @@ final class PaceTests: XCTestCase {
         XCTAssertEqual(Pace.margin(windowSeconds: nil), 30 * 60)
     }
 
+    func testForecastPastTheLimitWhenItRunsOutFirst() {
+        // 30 points an hour from 40 % with three hours to go lands at 130: "out".
+        let window = session(used: 40, resetIn: 3 * 3600)
+        let pace = Pace.compute(points: ramp(from: 10, to: 40, minutes: 60), window: window, now: now)
+        XCTAssertEqual(pace.forecast(for: window, now: now)!, 130, accuracy: 2)
+    }
+
+    func testForecastLandsShortOfTheLimitOnPace() {
+        // 4 points an hour from 40 % with two hours to go lands at 48.
+        let window = session(used: 40, resetIn: 2 * 3600)
+        let pace = Pace.compute(points: ramp(from: 36, to: 40, minutes: 60), window: window, now: now)
+        XCTAssertEqual(pace.forecast(for: window, now: now)!, 48, accuracy: 0.5)
+    }
+
+    func testForecastInsideTheMarginStopsAtTheLimit() {
+        // 30 points an hour from 70 % with 1h10m to go reaches 100 ten minutes early — inside the half-hour margin,
+        // so it is on pace and the forecast stops at 100 rather than saying "out".
+        let window = session(used: 70, resetIn: 70 * 60)
+        let pace = Pace.compute(points: ramp(from: 40, to: 70, minutes: 60), window: window, now: now)
+        XCTAssertEqual(pace.verdict, .onPace)
+        XCTAssertEqual(pace.forecast(for: window, now: now), 100)
+    }
+
+    func testForecastOfIdleIsWhereItIsAndEarlyIsUnknown() {
+        let window = session(used: 40, resetIn: 3600)
+        let stalled = Pace.compute(points: ramp(from: 40, to: 40, minutes: 60), window: window, now: now)
+        XCTAssertEqual(stalled.forecast(for: window, now: now), 40)
+        let early = Pace.compute(points: ramp(from: 38, to: 40, minutes: 6), window: window, now: now)
+        XCTAssertNil(early.forecast(for: window, now: now))
+    }
+
     func testNoResetMeansNoMarkerAndNeverFast() {
         var window = session(used: 70, resetIn: 3600)
         window.resetsAt = nil

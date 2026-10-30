@@ -1,19 +1,17 @@
 import AppKit
 import SwiftUI
 
-/// Root of the floating panel: a header with the app tile and title, then one flat row per account. The ground is
-/// Fritter's slate at 90 % over the window material, 12 pt corners.
+/// Root of the floating panel: the wordmark and the forecast's legend, then one section per account, on frosted
+/// glass with 18 pt corners.
 struct PanelRoot: View {
     var store: UsageStore
 
-    @Environment(\.colorScheme) private var scheme
-
     var body: some View {
-        let p = Palette.resolve(scheme)
         PanelView(store: store)
             .frame(width: PanelController.width)
-            .background { WindowMaterial().overlay(p.window) }
+            .background { PanelGlass() }
             .clipShape(RoundedRectangle(cornerRadius: Theme.panelRadius, style: .continuous))
+            .overlay { PanelRim() }
             .padding(1)
     }
 }
@@ -29,17 +27,17 @@ struct PanelView: View {
         VStack(spacing: 0) {
             header
             if !VendorStatus.shared.trouble.isEmpty { vendorNotice }
-            VStack(spacing: 6) {
+            VStack(spacing: 0) {
                 if cards.isEmpty {
                     emptyState
                 } else {
                     ForEach(cards) { snapshot in
-                        AccountCard(snapshot: snapshot, samples: store.history.samples(for: snapshot.id, last: 24 * 3600), paces: store.paces[snapshot.id] ?? [:])
+                        AccountCard(snapshot: snapshot, paces: store.paces[snapshot.id] ?? [:])
                     }
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.bottom, 10)
+            .padding(.horizontal, 14)
+            .padding(.bottom, 4)
         }
     }
 
@@ -65,18 +63,24 @@ struct PanelView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 14)
         .padding(.bottom, 8)
     }
 
     private var header: some View {
         TimelineView(.periodic(from: .now, by: 10)) { context in
-            HStack(spacing: 10) {
+            HStack(spacing: 6) {
                 Wordmark(height: 17, ink: p.title)
-                    .padding(.leading, 2)
-                Spacer()
+                Spacer(minLength: 10)
                 if let version = Updater.shared.available {
                     UpdatePill(version: version)
+                } else {
+                    // The legend at full length when it fits beside the buttons, shorter when it doesn't.
+                    ViewThatFits(in: .horizontal) {
+                        legend(full: true)
+                        legend(full: false)
+                        Color.clear.frame(width: 0, height: 0)
+                    }
                 }
                 HeaderButton(symbol: "arrow.clockwise",
                              help: store.lastRefresh.map { "Refresh now — updated \(Relative.ago($0, from: context.date))" } ?? "Refresh now",
@@ -90,10 +94,28 @@ struct PanelView: View {
                 }
             }
             .padding(.leading, 14)
-            .padding(.trailing, 10)
+            .padding(.trailing, 8)
             .padding(.top, 10)
-            .padding(.bottom, 8)
+            .padding(.bottom, 6)
         }
+    }
+
+    /// How to read a bar: solid is used now, hatched is where this pace lands by the reset.
+    private func legend(full: Bool) -> some View {
+        HStack(spacing: 5) {
+            Capsule().fill(p.markFine).frame(width: 14, height: 6)
+            Text(full ? "used now" : "now")
+            Hatch(color: p.markFine)
+                .frame(width: 14, height: 6)
+                .clipShape(Capsule())
+                .padding(.leading, 7)
+            Text(full ? "by the reset, at this pace" : "by the reset")
+        }
+        .font(.system(size: 10.5))
+        .foregroundStyle(p.muted)
+        .lineLimit(1)
+        .fixedSize()
+        .help("Each bar is solid to what's used now and hatched on to where the current pace lands by the reset. Hatching that ends at a red cap means that window runs out first.")
     }
 
     private var emptyState: some View {

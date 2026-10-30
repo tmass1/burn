@@ -196,10 +196,11 @@ final class UsageStore {
     private func computePaces(now: Date) {
         var out: [String: [String: Pace]] = [:]
         for snapshot in snapshots where snapshot.problem == nil && !snapshot.isStale {
-            for window in snapshot.windows where window.kind.isPooled {
+            // Model caps get a pace too, for their forecast in the panel; the alerts and the menu bar read pooled ones only.
+            for window in snapshot.windows where window.kind.isPooled || window.kind == .model {
                 let points = history.points(for: snapshot.id, window: window, last: History.denseFor)
                 var pace = Pace.compute(points: points, window: window, now: now)
-                pace.typical = Baseline.typicalRate(points: points, kind: window.kind, now: now)
+                if window.kind.isPooled { pace.typical = Baseline.typicalRate(points: points, kind: window.kind, now: now) }
                 out[snapshot.id, default: [:]][window.id] = pace
             }
         }
