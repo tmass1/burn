@@ -1,0 +1,14 @@
+// The site at burn.tommymassaro.com: a Cloudflare Worker that serves only the static files in site/. The custom
+// domain is created on deploy, DNS record and certificate included, because the zone is on the same account — the
+// same setup as mark.tommymassaro.com. burn-1hx.pages.dev (the Pages project it started on) keeps serving too.
+//   npx wrangler deploy
+{
+  "$schema": "https://unpkg.com/wrangler@4.80.0/config-schema.json",
+  "name": "burn-site",
+  "account_id": "2fbdb9eace50ce37fd227a7928e7e925",
+  "compatibility_date": "2026-09-01",
+  "assets": { "directory": "./site", "html_handling": "auto-trailing-slash", "not_found_handling": "none" },
+  "routes": [{ "pattern": "burn.tommymassaro.com", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false
+}
