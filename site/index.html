@@ -18,6 +18,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Martian+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
 <style>
+/* The shared signature bar's Inter (signature/, Tommy's sites' common footer). Chrome ignores @font-face inside a
+   shadow root, so it's declared here too; signature.js stays identical to the shared copy. */
+@font-face{font-family:SignatureInter;font-weight:100 900;font-display:swap;src:url(signature/assets/inter.woff2) format("woff2")}
 :root{
   --bg:#0E0C0B;--bg2:#151211;--card:#1A1615;--line:rgba(255,236,224,.08);--line2:rgba(255,236,224,.16);
   --ink:#F4EEE8;--ink2:#C8BEB5;--mute:#8F857D;
@@ -327,7 +330,7 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.15)}
 .priv b{display:block;color:var(--ink);font:800 22px/1.05 var(--display);text-transform:uppercase;margin-bottom:8px}
 .priv code{font:400 12px var(--mono)}
 
-footer{padding:44px 0 64px;border-top:1px solid var(--line);color:var(--mute);font-size:14px}
+footer{padding:44px 0;border-top:1px solid var(--line);color:var(--mute);font-size:14px}
 footer .row2{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
 footer a{color:var(--ink2);text-decoration:none;transition:color .2s}
 footer a:hover{color:var(--ink)}
@@ -601,7 +604,7 @@ footer a:hover{color:var(--ink)}
 
 <footer>
   <div class="wrap row2">
-    <span>Made by Tommy Massaro. Not affiliated with Anthropic, OpenAI, xAI, Google, Cursor or GitHub.</span>
+    <span>Not affiliated with Anthropic, OpenAI, xAI, Google, Cursor or GitHub.</span>
     <span style="display:flex;flex-wrap:wrap;gap:18px"><a href="https://github.com/tmass1/burn">GitHub</a><a href="https://github.com/tmass1/burn/issues">Issues</a><a href="https://github.com/tmass1/burn/releases">Changelog</a><a href="https://github.com/tmass1/burn/blob/main/LICENSE">MIT</a></span>
   </div>
 </footer>
@@ -914,5 +917,7 @@ footer a:hover{color:var(--ink)}
   }));
 })();
 </script>
+<tommy-signature appearance="auto" current-product="burn"></tommy-signature>
+<script type="module" src="signature/signature.js"></script>
 </body>
 </html>
