@@ -244,6 +244,13 @@ class DeployCheckTest(unittest.TestCase):
         self.assertIn(f"npx wrangler rollback v-old --name {ds.WORKER}", out)
         self.assertTrue(c)
 
+    def test_a_change_to_the_deploy_script_alone_adds_nothing_for_the_site(self):
+        self.repo.commit("Tune the deploy script", {"scripts/deploy_site.py": "# changed"})
+        code, out, report, _ = self.run_tool("--check")
+        adds = out.split("6. What this deploy adds")[1].split("\n7.")[0]
+        self.assertIn("Nothing new for the site. Deploying would change nothing.", adds)
+        self.assertNotIn("Tune the deploy script", adds)
+
     def test_unpushed_commits_and_newer_github_commits_are_questions(self):
         remote = self.root / "remote.git"
         sh(self.root, "git", "init", "-q", "--bare", str(remote))

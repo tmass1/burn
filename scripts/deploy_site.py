@@ -42,6 +42,8 @@ PAGES_PROJECT = "burn"
 STAGING_BRANCH = "staging"
 # What a deploy is made of. Uncommitted changes to any of these stop it.
 INPUTS = ("site", "wrangler.jsonc", "scripts/deploy_site.py")
+# What visitors get. A change to the script alone deploys nothing new.
+SHIPPED = ("site", "wrangler.jsonc")
 # Pages that must load, byte for byte as committed, after a deploy (paths inside site/).
 PUBLIC = ("index.html", "demo/index.html", "assets/og.png", "demo/poster.png", "signature/signature.js")
 # Repo files that sit beside site/, not in it, and must never be served.
@@ -446,7 +448,7 @@ def show_additions(git: Git, lives: List[Live], report: Report) -> None:
         if base in shown:
             continue
         shown.add(base)
-        changes = git.lines("log", "--format=%h %s", f"{base}..HEAD", "--", *INPUTS)
+        changes = git.lines("log", "--format=%h %s", f"{base}..HEAD", "--", *SHIPPED)
         others = len(git.lines("rev-list", f"{base}..HEAD")) - len(changes)
         report.line(f"{hosts}, running {git.subject(base)}:")
         if not changes:
@@ -456,7 +458,7 @@ def show_additions(git: Git, lives: List[Live], report: Report) -> None:
             report.line(f"  {line}")
         if len(changes) > 15:
             report.line(f"  …and {len(changes) - 15} more")
-        for line in git.lines("diff", "--stat=90", base, "HEAD", "--", *INPUTS):
+        for line in git.lines("diff", "--stat=90", base, "HEAD", "--", *SHIPPED):
             report.line(f"    {line.strip()}")
         if others > 0:
             report.line(f"  (plus {others} commit(s) that don't touch the site)")
