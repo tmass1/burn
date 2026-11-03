@@ -40,3 +40,5 @@ To review the other agent's work, read its commit or diff without changing it. C
 ## Releases
 
 Deploying the site, publishing a release, notarizing, or pushing to `main` happens only when Tommy asks. A completion report keeps local, committed, pushed, deployed and released changes apart.
+
+The site deploys only through `scripts/deploy_site.py`, which stops if the branch is missing anything already live. The rules are in `AGENTS.md`; `docs/deploying.md` explains each stop. Claude's project hook (`.claude/settings.json`) blocks a raw `wrangler deploy`.

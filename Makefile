@@ -1,4 +1,4 @@
-.PHONY: build run install package release clean
+.PHONY: build run install package release clean deploy-check deploy deploy-staging
 
 build:
 	scripts/bundle.sh --debug
@@ -16,6 +16,16 @@ package:
 
 release:
 	scripts/release.sh
+
+# The site. The only way to deploy it: checks that nothing live would be lost first. docs/deploying.md explains it.
+deploy-check:
+	scripts/deploy_site.py --check
+
+deploy:
+	scripts/deploy_site.py
+
+deploy-staging:
+	scripts/deploy_site.py --staging
 
 clean:
 	rm -rf .build build
