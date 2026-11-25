@@ -1,0 +1,86 @@
+/* Burn's quieter pages: the setup guide, privacy and terms. The tokens, wordmark, pill and footer are index.html's,
+   which keeps its own inline; change one and change the other. */
+:root{
+  --bg:#0E0C0B;--bg2:#151211;--card:#1A1615;--line:rgba(255,236,224,.08);--line2:rgba(255,236,224,.16);
+  --ink:#F4EEE8;--ink2:#C8BEB5;--mute:#8F857D;--ember:#F32132;--lane:rgba(255,236,224,.07);
+  --display:"Big Shoulders Display",ui-sans-serif,system-ui,sans-serif;
+  --body:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --mono:"Martian Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){
+  :root{--bg:#F3EFE9;--bg2:#FBF9F6;--card:#FFFFFF;--line:rgba(36,22,14,.09);--line2:rgba(36,22,14,.17);--ink:#17110E;--ink2:#4B4039;--mute:#776B63;--lane:rgba(36,22,14,.08);color-scheme:light}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.dark-only{display:inline}.light-only{display:none}
+@media (prefers-color-scheme:light){.dark-only{display:none}.light-only{display:inline}}
+:focus-visible{outline:2px solid var(--ember);outline-offset:3px;border-radius:4px}
+.wrap{max-width:760px;margin:0 auto;padding:0 28px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:20px;height:72px}
+.wordmark{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.wordmark img{width:32px;height:32px}
+.wordmark b{font:700 24px/1 var(--body);letter-spacing:-.04em}
+.pill{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line2);color:var(--ink);font-weight:500;font-size:15px;text-decoration:none;transition:color .2s,border-color .2s}
+.pill:hover{border-color:var(--ember);color:var(--ember)}
+
+main.wrap{padding-top:56px;padding-bottom:96px}
+h1{margin:0;font:800 clamp(52px,8vw,84px)/.9 var(--display);letter-spacing:-.01em;text-transform:uppercase;text-wrap:balance}
+.lede{margin:20px 0 0;max-width:56ch;font-size:19px;line-height:1.55;color:var(--ink2);text-wrap:pretty}
+.date{margin:14px 0 0;font:400 12px/1.5 var(--mono);color:var(--mute)}
+h2{margin:56px 0 0;font:800 30px/1 var(--display);text-transform:uppercase;letter-spacing:-.005em;text-wrap:balance}
+main p,main li,main dd{color:var(--ink2);text-wrap:pretty}
+main p{margin:14px 0 0;max-width:66ch}
+main .lede{max-width:56ch}
+main ul,main ol{margin:14px 0 0;padding-left:22px;max-width:66ch}
+main li+li{margin-top:6px}
+main li::marker{color:var(--mute)}
+main strong{font-weight:600;color:var(--ink)}
+main a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px;transition:text-decoration-color .2s}
+main a:hover{text-decoration-color:currentColor}
+code,kbd{padding:2px 6px;border-radius:6px;background:var(--lane);color:var(--ink);white-space:nowrap}
+code{font:400 .82em/1.4 var(--mono)}
+kbd{font:500 .9em/1.4 var(--body)}
+
+/* The short version, ahead of the detail. */
+.short{margin-top:36px;padding:24px 26px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.short h2{margin:0;font-size:24px}
+.short ul{margin-top:12px}
+
+/* Two columns that go together: what it is, then what there is to say about it. */
+.pairs{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr);margin:20px 0 0;border-bottom:1px solid var(--line)}
+.pairs dt,.pairs dd{padding:14px 0;border-top:1px solid var(--line)}
+.pairs dt{padding-right:20px;font-weight:600;color:var(--ink)}
+.pairs dd{margin:0}
+
+/* Every connection the app makes. */
+.hosts{width:100%;margin:20px 0 0;border-collapse:collapse;font-size:15px;line-height:1.5}
+.hosts th{padding:0 18px 10px 0;text-align:left;font:500 11px/1.4 var(--mono);color:var(--mute)}
+.hosts td{padding:14px 18px 14px 0;border-top:1px solid var(--line);vertical-align:top;color:var(--ink2)}
+.hosts td:first-child{width:46%}
+.hosts code{display:inline-block;margin:0 0 4px}
+.hosts th:last-child,.hosts td:last-child{padding-right:0}
+
+footer{padding:36px 0 44px;border-top:1px solid var(--line);color:var(--mute);font-size:14px}
+footer nav{display:flex;flex-wrap:wrap;gap:4px 20px}
+footer a{display:inline-flex;align-items:center;min-height:32px;color:var(--ink2);text-decoration:none;transition:color .2s}
+footer a:hover,footer a[aria-current]{color:var(--ink)}
+footer p{margin:14px 0 0}
+
+@media (max-width:620px){
+  .wrap{padding:0 16px}
+  main.wrap{padding-top:32px;padding-bottom:72px}
+  .pairs{grid-template-columns:minmax(0,1fr)}
+  .pairs dt{padding:16px 0 0}
+  .pairs dd{padding:4px 0 16px;border-top:0}
+  /* A row becomes a block, and each cell says which column it was. */
+  .hosts thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  .hosts tr{display:block;padding:14px 0;border-top:1px solid var(--line)}
+  .hosts td,.hosts td:first-child{display:block;width:auto;padding:2px 0;border:0}
+  .hosts td[data-th]::before{content:attr(data-th) ": ";color:var(--mute)}
+  footer a{min-height:44px}
+}
+/* Narrower than the longest command: it wraps, and each piece keeps its own ends. */
+@media (max-width:380px){code{white-space:normal;overflow-wrap:anywhere;-webkit-box-decoration-break:clone;box-decoration-break:clone}}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.001ms!important}}

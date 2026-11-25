@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy: Burn for Mac</title>
+<meta name="description" content="What Burn reads on your Mac and where it goes. Each sign-in is sent only to the company it belongs to, the app has no account or analytics, and this site counts visits without cookies.">
+<meta property="og:title" content="Privacy: Burn for Mac">
+<meta property="og:image" content="https://burn.tommymassaro.com/assets/og.png">
+<meta property="og:url" content="https://burn.tommymassaro.com/privacy/">
+<link rel="canonical" href="https://burn.tommymassaro.com/privacy/">
+<meta name="theme-color" content="#0E0C0B" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F3EFE9" media="(prefers-color-scheme: light)">
+<link rel="icon" href="../assets/burn-midnight.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&family=Instrument+Sans:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../page.css">
+</head>
+<body>
+<header class="wrap top">
+  <a class="wordmark" href="../" aria-label="Burn, home">
+    <img class="dark-only" src="../assets/burn-midnight.svg" alt="">
+    <img class="light-only" src="../assets/burn-porcelain.svg" alt="">
+    <b>burn</b>
+  </a>
+  <a class="pill" href="../#install">Install</a>
+</header>
+
+<main class="wrap">
+  <h1>Privacy</h1>
+  <p class="lede">Burn reads the sign-ins on your Mac to see how much of each plan is left, so here is exactly what it reads and where it goes.</p>
+  <p class="date">Last updated 25 November 2026</p>
+
+  <section class="short" aria-labelledby="short">
+    <h2 id="short">The short version</h2>
+    <ul>
+      <li>Each sign-in is sent only to the company it belongs to, to ask how much you’ve used.</li>
+      <li>There’s no Burn account and no Burn server, and the app has no analytics.</li>
+      <li>Your usage history stays on your Mac.</li>
+      <li>By itself, the app also checks GitHub for updates and the companies’ status pages. You can turn both off.</li>
+      <li>This website counts visits, without cookies.</li>
+    </ul>
+  </section>
+
+  <h2>The app</h2>
+  <p><strong>Your sign-ins.</strong> Burn reads the ones that Claude Code, ChatGPT or Codex, the Grok CLI, Antigravity, Cursor and GitHub’s tools already keep on your Mac, in your Keychain and in their own files. When one is about to run out, Burn renews it with the company it belongs to, and keeps the new one where that sign-in lives. Cursor’s and GitHub’s are only ever read.</p>
+  <p><strong>Accounts you add.</strong> A Claude account you add gets a Claude Code profile of its own, in a folder such as <code>~/.claude-personal</code>. A Gemini account is kept in a file in Burn’s folder that only your user account can read. Removing an account you added signs it out and deletes what was kept for it. Removing one that another app signed in only stops Burn from checking it.</p>
+  <p><strong>Your usage.</strong> What Burn learns is kept on your Mac, in <code>~/Library/Application Support/Burn</code>: the latest readings, 90 days of history, and a log of what the app did.</p>
+  <p><strong>Claude Code’s logs.</strong> To show what your work would have cost at API prices, Burn reads the session logs Claude Code keeps on your Mac. It keeps how many tokens each model used each day. It doesn’t keep what you or Claude wrote, and none of it is sent anywhere.</p>
+  <p><strong>What you turn on.</strong> Notifications are made on your Mac. If you install them, the <code>burn</code> command and the per-account commands are kept in <code>~/.local/bin</code>, and the status line is added to Claude Code’s settings after Burn saves a copy of them.</p>
+  <p><strong>Accounts and analytics.</strong> There are none. The app doesn’t track how you use it.</p>
+
+  <h2>When something leaves your Mac</h2>
+  <p>These are all the connections the app makes, all of them over HTTPS. It checks an account only if you have one, every three minutes unless you change that, and when you open the panel.</p>
+  <table class="hosts">
+    <thead><tr><th scope="col">Where</th><th scope="col">What’s sent</th><th scope="col">When</th></tr></thead>
+    <tbody>
+      <tr><td><code>api.anthropic.com</code> <code>platform.claude.com</code></td><td data-th="Sent">Your Claude sign-in</td><td data-th="When">To check usage, or renew the sign-in</td></tr>
+      <tr><td><code>chatgpt.com</code> <code>auth.openai.com</code></td><td data-th="Sent">Your ChatGPT sign-in</td><td data-th="When">To check usage, or renew the sign-in</td></tr>
+      <tr><td><code>cli-chat-proxy.grok.com</code> <code>auth.x.ai</code></td><td data-th="Sent">Your Grok sign-in</td><td data-th="When">To check usage, or renew the sign-in</td></tr>
+      <tr><td><code>cloudcode-pa.googleapis.com</code> <code>daily-cloudcode-pa.googleapis.com</code> <code>oauth2.googleapis.com</code> <code>www.googleapis.com</code></td><td data-th="Sent">Your Gemini sign-in</td><td data-th="When">To check usage, renew the sign-in, or add and remove an account</td></tr>
+      <tr><td><code>api2.cursor.sh</code></td><td data-th="Sent">Your Cursor sign-in</td><td data-th="When">To check usage, or renew the sign-in</td></tr>
+      <tr><td><code>api.github.com</code></td><td data-th="Sent">Your GitHub sign-in</td><td data-th="When">To check Copilot usage</td></tr>
+      <tr><td><code>status.claude.com</code> <code>status.openai.com</code> <code>status.cursor.com</code> <code>www.githubstatus.com</code></td><td data-th="Sent">A request for the page</td><td data-th="When">Every five minutes, unless you turn off Show vendor status</td></tr>
+      <tr><td><code>github.com</code></td><td data-th="Sent">A request for the latest version</td><td data-th="When">Shortly after Burn opens, then once a day, unless you turn it off, and when you choose to update</td></tr>
+    </tbody>
+  </table>
+  <p>Adding an account opens that company’s own sign-in page in your browser. Both switches are in Settings, under General. Like any web request, these show the other side your IP address.</p>
+  <p><strong>The companies themselves.</strong> Your accounts are with Anthropic, OpenAI, xAI, Google, Cursor and GitHub, so what they keep about your use of them is covered by their own terms and privacy policies. Burn asks only how much you’ve used, and can’t see or change what they keep.</p>
+
+  <h2>This website</h2>
+  <p><strong>Visit counts.</strong> The home page and the setup guide use PostHog to count page views and clicks on Download, and to see how long a page is on screen. The counts reach PostHog by way of <code>tommymassaro.com</code>. PostHog runs without cookies here and doesn’t build a profile of you. This page and the terms don’t load it. To stop being counted in your browser, visit <a href="https://burn.tommymassaro.com/?analytics=off">the home page with <code>?analytics=off</code></a> added to its address. That choice is kept in one small cookie, set only because you asked, and it also covers Tommy Massaro’s other sites at <code>tommymassaro.com</code>.</p>
+  <p><strong>Hosting.</strong> Cloudflare hosts the site and handles your IP address in order to deliver its pages. It also adds its own Web Analytics script to pages, which counts visits without cookies.</p>
+  <p><strong>Downloads.</strong> Burn is downloaded from GitHub, which handles your browser’s request for it.</p>
+  <p><strong>Fonts.</strong> The site’s typefaces and icons come from Google Fonts, so Google sees your browser’s request for them.</p>
+  <p><strong>The live demo.</strong> It runs in your browser, on made-up accounts. It doesn’t ask for a sign-in and sends nothing.</p>
+
+  <h2>Selling and sharing</h2>
+  <p>Your data isn’t sold, and it isn’t shared for advertising.</p>
+
+  <h2>Your rights</h2>
+  <p>Depending on where you live, you may have the right to see, correct or delete data held about you, or to object to how it’s used. Burn keeps nothing about you on a server, so in practice this covers the website’s visit counts. Write to <a href="mailto:hey@tommymassaro.com">hey@tommymassaro.com</a> and you’ll get help with it.</p>
+
+  <h2>Changes and contact</h2>
+  <p>If any of this changes, this page will say so and show a new date. Burn is made by Tommy Massaro. Questions are welcome at <a href="mailto:hey@tommymassaro.com">hey@tommymassaro.com</a>.</p>
+</main>
+
+<footer>
+  <div class="wrap">
+    <nav aria-label="More"><a href="../">Home</a><a href="../setup/">Setup guide</a><a href="https://github.com/tmass1/burn/releases">Changelog</a><a href="https://github.com/tmass1/burn">GitHub</a><a href="../privacy/" aria-current="page">Privacy</a><a href="../terms/">Terms</a><a href="mailto:hey@tommymassaro.com">Contact</a></nav>
+    <p>Not affiliated with Anthropic, OpenAI, xAI, Google, Cursor or GitHub.</p>
+  </div>
+</footer>
+</body>
+</html>
